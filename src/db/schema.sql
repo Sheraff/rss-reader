@@ -112,7 +112,7 @@ CREATE TABLE IF NOT EXISTS articles (
 -- Connects users to feeds they subscribe to
 CREATE TABLE IF NOT EXISTS subscriptions (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  user_id INTEGER NOT NULL,
+  user_id TEXT NOT NULL,
   feed_id INTEGER NOT NULL,
   category TEXT, -- Optional user-defined category (free-form string)
   
@@ -127,7 +127,7 @@ CREATE TABLE IF NOT EXISTS subscriptions (
 -- User-Article junction table
 -- Tracks read status, bookmarks, and favorites per user per article
 CREATE TABLE IF NOT EXISTS user_article (
-  user_id INTEGER NOT NULL,
+  user_id TEXT NOT NULL,
   article_id INTEGER NOT NULL,
   
   -- User interaction flags

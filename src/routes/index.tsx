@@ -4,6 +4,14 @@ import { getDatabase } from "#/db"
 import type { FeedWithSubscription } from "#/db/types"
 import styles from "./-index.module.css"
 import { getUserId } from "#/sso/getUserId"
+import { inngest } from "#/inngest/inngest"
+import * as v from "valibot"
+
+/**
+ * TODO
+ * - setup SSE (or WS) per user for real-time feed updates
+ * - adding a feed should itself be an inngest function: check if feed url is valid, if it yields an RSS feed, if not search for RSS feed links in the HTML, etc.
+ */
 
 const getUserFeeds = createServerFn({
 	method: "GET"
@@ -32,6 +40,58 @@ const getUserFeeds = createServerFn({
 		.all(userId)
 })
 
+const addFeedSubscription = createServerFn({
+	method: "POST"
+})
+	.inputValidator(
+		v.object({
+			feedUrl: v.pipe(v.string(), v.url())
+		})
+	)
+	.handler(async ({ data, signal }) => {
+		// 1. Get user ID
+		const userId = await getUserId({ signal })
+		const db = getDatabase()
+
+		// 2. Create user in DB if it doesn't exist
+		db.prepare(`
+			INSERT OR IGNORE INTO users (id) VALUES (?)
+		`).run(userId)
+
+		// 3. Check if feed exists, create if not
+		let feed = db
+			.prepare<[url: string], { id: number }>(`
+				SELECT id FROM feeds WHERE url = ?
+			`)
+			.get(data.feedUrl)
+
+		const feedWasCreated = !feed
+
+		if (!feed) {
+			const result = db
+				.prepare(`
+					INSERT INTO feeds (url) VALUES (?)
+				`)
+				.run(data.feedUrl)
+			feed = { id: Number(result.lastInsertRowid) }
+		}
+
+		// 4. Add feed to user's subscriptions (if not already subscribed)
+		db.prepare(`
+			INSERT OR IGNORE INTO subscriptions (user_id, feed_id) VALUES (?, ?)
+		`).run(userId, feed.id)
+
+		// 5. Call inngest.send to fetch that feed (if it was just created)
+		if (feedWasCreated) {
+			await inngest.send({
+				name: "feed/parse.requested",
+				data: { feedId: feed.id }
+			})
+		}
+
+		return { success: true, feedId: feed.id }
+	})
+
 export const Route = createFileRoute("/")({
 	component: HomePage,
 	loader: ({ abortController }) => getUserFeeds({ signal: abortController.signal })
@@ -40,20 +100,92 @@ export const Route = createFileRoute("/")({
 function HomePage() {
 	const feeds = Route.useLoaderData()
 
+	const handleAddFeed = async (e: React.FormEvent<HTMLFormElement>) => {
+		e.preventDefault()
+		const formData = new FormData(e.currentTarget)
+		const feedUrl = formData.get("feedUrl") as string | null
+
+		if (!feedUrl) {
+			alert("Please enter a valid feed URL.")
+			return
+		}
+
+		try {
+			await addFeedSubscription({ data: { feedUrl } })
+			// Close the dialog
+			const dialog = e.currentTarget.closest<HTMLDialogElement>("dialog")
+			dialog?.close()
+			// Reset form
+			e.currentTarget.reset()
+			// // Refresh the page to show new feed
+			// window.location.reload()
+		} catch (error) {
+			console.error("Failed to add feed:", error)
+			alert("Failed to add feed. Please check the URL and try again.")
+		}
+	}
+
 	if (feeds.length === 0) {
 		return (
 			<div className={styles.container}>
 				<div className={styles.emptyState}>
 					<h1>Welcome to RSS Reader</h1>
 					<p>You don't have any feeds yet. Start by subscribing to your first feed!</p>
+					<button
+						type="button"
+						className={styles.addFeedButton}
+						commandfor="add-feed-dialog" command="show-modal"
+					>
+						Add Feed
+					</button>
 				</div>
+
+				<dialog id="add-feed-dialog" className={styles.dialog}>
+					<form method="dialog" className={styles.dialogHeader}>
+						<h2>Add New Feed</h2>
+						<button type="submit" className={styles.closeButton} aria-label="Close">
+							×
+						</button>
+					</form>
+					<form onSubmit={handleAddFeed} className={styles.dialogContent}>
+						<label htmlFor="feedUrl" className={styles.label}>
+							Feed URL
+						</label>
+						<input
+							type="url"
+							id="feedUrl"
+							name="feedUrl"
+							className={styles.input}
+							placeholder="https://example.com/feed.xml"
+							required
+						/>
+						<div className={styles.dialogActions}>
+							<button type="button" formMethod="dialog" className={styles.cancelButton}>
+								Cancel
+							</button>
+							<button type="submit" className={styles.submitButton}>
+								Add Feed
+							</button>
+						</div>
+					</form>
+				</dialog>
 			</div>
 		)
 	}
 
 	return (
 		<div className={styles.container}>
-			<h1 className={styles.title}>My Feeds</h1>
+			<div className={styles.header}>
+				<h1 className={styles.title}>My Feeds</h1>
+				<button
+					type="button"
+					className={styles.addFeedButton}
+					commandfor="add-feed-dialog" command="show-modal"
+				>
+					Add Feed
+				</button>
+			</div>
+
 			<ul className={styles.feedList}>
 				{feeds.map((feed) => (
 					<li key={feed.id} className={styles.feedItem}>
@@ -73,6 +205,43 @@ function HomePage() {
 					</li>
 				))}
 			</ul>
+
+			<dialog id="add-feed-dialog" className={styles.dialog}>
+				<form method="dialog" className={styles.dialogHeader}>
+					<h2>Add New Feed</h2>
+					<button type="submit" className={styles.closeButton} aria-label="Close">
+						×
+					</button>
+				</form>
+				<form onSubmit={handleAddFeed} className={styles.dialogContent}>
+					<label htmlFor="feedUrl" className={styles.label}>
+						Feed URL
+					</label>
+					<input
+						type="url"
+						id="feedUrl"
+						name="feedUrl"
+						className={styles.input}
+						placeholder="https://example.com/feed.xml"
+						required
+					/>
+					<div className={styles.dialogActions}>
+						<button type="button" formMethod="dialog" className={styles.cancelButton}>
+							Cancel
+						</button>
+						<button type="submit" className={styles.submitButton}>
+							Add Feed
+						</button>
+					</div>
+				</form>
+			</dialog>
 		</div>
 	)
+}
+
+declare module "react" {
+	interface ButtonHTMLAttributes<T> extends HTMLAttributes<T> {
+		commandfor?: string
+		command?: "show-modal" | "close" | "toggle-popover" | "hide-popover"
+	}
 }
