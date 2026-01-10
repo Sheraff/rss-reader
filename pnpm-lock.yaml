@@ -10,7 +10,7 @@ importers:
     dependencies:
       '@sso/client':
         specifier: github:sheraff/sso#main&path:/client
-        version: https://codeload.github.com/sheraff/sso/tar.gz/ffeaa6b4fb360eba3ecf4b48caa18c79169a5323#path:/client
+        version: https://codeload.github.com/sheraff/sso/tar.gz/20cd0d85c2f4fca71fbbdfd448501a578ecb7002#path:/client
       '@tanstack/react-devtools':
         specifier: 0.9.2
         version: 0.9.2(@types/react-dom@19.2.3(@types/react@19.2.8))(@types/react@19.2.8)(csstype@3.2.3)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(solid-js@1.9.10)
@@ -1368,9 +1368,9 @@ packages:
     peerDependencies:
       solid-js: ^1.6.12
 
-  '@sso/client@https://codeload.github.com/sheraff/sso/tar.gz/ffeaa6b4fb360eba3ecf4b48caa18c79169a5323#path:/client':
-    resolution: {path: /client, tarball: https://codeload.github.com/sheraff/sso/tar.gz/ffeaa6b4fb360eba3ecf4b48caa18c79169a5323}
-    version: 1.0.1
+  '@sso/client@https://codeload.github.com/sheraff/sso/tar.gz/20cd0d85c2f4fca71fbbdfd448501a578ecb7002#path:/client':
+    resolution: {path: /client, tarball: https://codeload.github.com/sheraff/sso/tar.gz/20cd0d85c2f4fca71fbbdfd448501a578ecb7002}
+    version: 1.0.2
 
   '@standard-schema/spec@1.1.0':
     resolution: {integrity: sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w==}
@@ -4283,7 +4283,7 @@ snapshots:
     dependencies:
       solid-js: 1.9.10
 
-  '@sso/client@https://codeload.github.com/sheraff/sso/tar.gz/ffeaa6b4fb360eba3ecf4b48caa18c79169a5323#path:/client':
+  '@sso/client@https://codeload.github.com/sheraff/sso/tar.gz/20cd0d85c2f4fca71fbbdfd448501a578ecb7002#path:/client':
     dependencies:
       node-ipc: 12.0.0
 

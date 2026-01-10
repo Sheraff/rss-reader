@@ -1,12 +1,24 @@
-import { HeadContent, Scripts, createRootRoute } from "@tanstack/react-router"
+import { HeadContent, Scripts, createRootRoute, redirect } from "@tanstack/react-router"
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools"
 import { TanStackDevtools } from "@tanstack/react-devtools"
-
+import { COOKIE_NAME, createSsoClient } from '@sso/client'
 import Header from "../components/Header"
 
 import appCss from "../styles.css?url"
+import { createServerFn } from "@tanstack/react-start"
+import { getCookie } from '@tanstack/react-start/server'
+
+const ssoClient = process.env.NODE_ENV === 'production' ? createSsoClient('foo') : null
+
+const authProtected = createServerFn().handler(async ({ signal }) => {
+  if (!ssoClient) return
+  const auth = await ssoClient.checkAuth(getCookie(COOKIE_NAME), 'rss.florianpellet.com', '/', signal)
+  if (auth.authenticated) return
+  throw redirect({ to: auth.redirect })
+})
 
 export const Route = createRootRoute({
+  beforeLoad: ({ abortController }) => authProtected({ signal: abortController.signal }),
   head: () => ({
     meta: [
       {
@@ -17,7 +29,7 @@ export const Route = createRootRoute({
         content: "width=device-width, initial-scale=1"
       },
       {
-        title: "TanStack Start Starter"
+        title: "RSS Reader"
       }
     ],
     links: [
