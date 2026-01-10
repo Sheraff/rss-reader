@@ -58,7 +58,7 @@ function createSSEConnectionManager() {
 		/**
 		 * Send a notification to a specific user
 		 */
-		async notifyUser(userId: string, event: string, data: unknown): Promise<boolean> {
+		async notifyUser<K extends keyof EventSourceEventMap & string>(userId: string, event: K, data: EventSourceEventMap[K] extends MessageEvent<infer D> ? D : unknown): Promise<boolean> {
 			console.warn(`[SSE] Notifying user ${userId} with event ${event}`)
 			const connection = connections.get(userId)
 			if (!connection) {
@@ -80,7 +80,7 @@ function createSSEConnectionManager() {
 		/**
 		 * Broadcast a message to all connected users
 		 */
-		async broadcast(event: string, data: unknown): Promise<number> {
+		async broadcast<K extends keyof EventSourceEventMap & string>(event: K, data: EventSourceEventMap[K] extends MessageEvent<infer D> ? D : unknown): Promise<number> {
 			let sent = 0
 			const string = JSON.stringify(data)
 			for (const [userId, connection] of connections) {

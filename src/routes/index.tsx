@@ -6,8 +6,6 @@ import styles from "./-index.module.css"
 import { getUserId } from "#/sso/getUserId"
 import { inngest } from "#/inngest/inngest"
 import * as v from "valibot"
-import { useNotifications } from "#/sse/useNotifications"
-import { useState } from "react"
 
 /**
  * TODO

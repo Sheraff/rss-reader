@@ -51,34 +51,30 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 	)
 }
 
+declare global {
+	interface EventSourceEventMap {
+		"feed.parsed": MessageEvent<{
+			feedId: number
+			feedTitle: string | undefined
+			newArticles: number
+			totalItems: number
+		}>
+	}
+}
+
+
+
 
 function Notifications() {
 	const router = useRouter()
-	const [notifications, setNotifications] = useState<string[]>([])
 
 	// Connect to SSE for real-time notifications
 	const { isConnected } = useNotifications({
-		onNotification: (notification) => {
-			console.log("Received notification:", notification)
-
-			// Handle feed.parsed events
-			if (notification.event === "feed.parsed") {
-				const data = notification.data as {
-					feedId: number
-					feedTitle: string
-					newArticles: number
-					totalItems: number
-				}
-
-				if (data.newArticles > 0) {
-					const message = `${data.feedTitle}: ${data.newArticles} new article${data.newArticles > 1 ? "s" : ""}`
-					setNotifications((prev) => [message, ...prev.slice(0, 4)])
-
-					// Refresh the feed list
-					router.invalidate({ filter: (r) => r.routeId === '/' })
-				}
+		"feed.parsed": (data) => {
+			if (data.newArticles > 0) {
+				router.invalidate({ filter: (r) => r.routeId === '/' })
 			}
-		}
+		},
 	})
 
 	return (
@@ -103,27 +99,6 @@ function Notifications() {
 				/>
 				{isConnected ? "Live" : "Disconnected"}
 			</div>
-			{/* Notification toast area */}
-			{notifications.length > 0 && (
-				<div style={{ marginBottom: "1rem" }}>
-					{notifications.map((msg, idx) => (
-						<div
-							key={idx}
-							style={{
-								padding: "0.75rem 1rem",
-								marginBottom: "0.5rem",
-								backgroundColor: "#22c55e",
-								color: "white",
-								borderRadius: "0.5rem",
-								fontSize: "0.875rem",
-								animation: "slideIn 0.3s ease-out"
-							}}
-						>
-							🔔 {msg}
-						</div>
-					))}
-				</div>
-			)}
 		</>
 	)
 }
