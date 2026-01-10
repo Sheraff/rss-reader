@@ -19,7 +19,7 @@ export const parseArticle = inngest.createFunction(
 		const { feedId, articleId } = event.data
 
 		// Fetch article from database
-		const article = await step.run("fetch-article", async () => {
+		const article = await step.run("fetch-article", () => {
 			const db = getDatabase()
 			const article = db.prepare<[id: number], Article>(`
 				SELECT * FROM articles WHERE id = ?
@@ -55,7 +55,7 @@ export const parseArticle = inngest.createFunction(
 		})
 
 		// Parse article content with Readability
-		const parsed = await step.run("parse-article-content", async () => {
+		const parsed = await step.run("parse-article-content", () => {
 			const { document } = parseHTML(html)
 			const reader = new Readability(document)
 			const article = reader.parse()
@@ -68,7 +68,7 @@ export const parseArticle = inngest.createFunction(
 		})
 
 		// Update article in database with extracted content
-		await step.run("update-article-content", async () => {
+		await step.run("update-article-content", () => {
 			const db = getDatabase()
 			db.prepare<[
 				content: string,

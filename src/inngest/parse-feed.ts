@@ -8,12 +8,13 @@ export const parseFeed = inngest.createFunction(
 	{
 		id: "parse-feed",
 		retries: 3,
+		concurrency: 2,
 	},
 	{ event: "feed/parse.requested" },
 	async ({ event, step }) => {
 		const { feedId } = event.data
 
-		const feed = await step.run("validate-feed", async () => {
+		const feed = await step.run("validate-feed", () => {
 			const db = getDatabase()
 			// Validate feed exists and is active (outside steps - fast validation)
 			const feed = db.prepare<[id: number], Feed>(`
@@ -64,7 +65,7 @@ export const parseFeed = inngest.createFunction(
 
 		// Handle 304 Not Modified
 		if (fetchResult.status === 304) {
-			await step.run("update-last-fetched", async () => {
+			await step.run("update-last-fetched", () => {
 				const db = getDatabase()
 				db.prepare(`
 					UPDATE feeds
@@ -81,7 +82,7 @@ export const parseFeed = inngest.createFunction(
 		}
 
 		// Parse the RSS feed
-		const parsedFeed = await step.run({ id: "parse-rss-xml" }, async () => {
+		const parsedFeed = await step.run({ id: "parse-rss-xml" }, () => {
 			const parser = new Parser()
 			try {
 				return parser.parseString(fetchResult.xml)
@@ -91,7 +92,7 @@ export const parseFeed = inngest.createFunction(
 		})
 
 		// Update feed metadata
-		await step.run("update-feed-metadata", async () => {
+		await step.run("update-feed-metadata", () => {
 			const db = getDatabase()
 			db.prepare<[
 				title: string | null,
@@ -139,7 +140,7 @@ export const parseFeed = inngest.createFunction(
 		})
 
 		// Insert articles (using INSERT OR IGNORE for deduplication)
-		const newArticleIds = await step.run("insert-articles", async () => {
+		const newArticleIds = await step.run("insert-articles", () => {
 			const db = getDatabase()
 			const insertArticle = db.prepare<[
 				feed_id: number,
