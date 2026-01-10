@@ -5,14 +5,17 @@
   "imports": {
     "#/*": "./src/*"
   },
-  "packageManager": "pnpm@10.13.1",
   "scripts": {
     "dev": "turbo run dev:app dev:inngest",
     "dev:app": "vite dev --port 3000",
     "dev:inngest": "inngest-cli dev -u http://localhost:3000/api/inngest",
     "build": "vite build",
     "preview": "vite preview",
-    "tsc": "tsc --noEmit"
+    "tsc": "tsc --noEmit",
+    "format": "oxfmt",
+    "format:check": "oxfmt --check",
+    "lint": "oxlint --fix",
+    "lint:check": "oxlint"
   },
   "dependencies": {
     "@sso/client": "github:sheraff/sso#main&path:/client",
@@ -34,8 +37,11 @@
     "@types/react-dom": "19.2.3",
     "@vitejs/plugin-react": "5.1.2",
     "inngest-cli": "1.16.0",
+    "oxfmt": "^0.23.0",
+    "oxlint": "^1.38.0",
     "turbo": "2.7.3",
     "typescript": "5.9.3",
     "vite": "7.3.1"
-  }
+  },
+  "packageManager": "pnpm@10.13.1"
 }

@@ -1,12 +1,12 @@
 {
-	"$schema": "https://turborepo.org/schema.json",
-	"noUpdateNotifier": true,
-	"tasks": {
-		"dev:app": {
-			"persistent": true
-		},
-		"dev:inngest": {
-			"persistent": true
-		}
-	}
+  "$schema": "https://turborepo.org/schema.json",
+  "noUpdateNotifier": true,
+  "tasks": {
+    "dev:app": {
+      "persistent": true
+    },
+    "dev:inngest": {
+      "persistent": true
+    }
+  }
 }
