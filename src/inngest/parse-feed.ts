@@ -3,6 +3,7 @@ import type { Feed } from "#/db/types"
 import { inngest } from "#/inngest/inngest"
 import { NonRetriableError } from "inngest"
 import Parser from "rss-parser"
+import { getSSEManager } from "#/sse/sse-manager"
 
 export const parseFeed = inngest.createFunction(
 	{
@@ -218,7 +219,32 @@ export const parseFeed = inngest.createFunction(
 					}
 				}))
 			)
+
+			// Notify subscribers via SSE
+			await step.run("notify-subscribers", async () => {
+				const db = getDatabase()
+				// Get all users subscribed to this feed
+				const subscribers = db
+					.prepare<[feedId: number], { user_id: string }>(
+						`SELECT DISTINCT user_id FROM subscriptions WHERE feed_id = ?`
+					)
+					.all(feedId)
+
+				// Send notification to each subscriber
+				const sseManager = getSSEManager()
+				await Promise.allSettled(subscribers.map(subscriber =>
+					sseManager.notifyUser(subscriber.user_id, "feed.parsed", {
+						feedId,
+						feedTitle: parsedFeed.title,
+						newArticles: newArticleIds.length,
+						totalItems: parsedFeed.items?.length ?? 0
+					})
+				))
+
+				return { notifiedUsers: subscribers.length }
+			})
 		}
+
 
 		return {
 			feedId,

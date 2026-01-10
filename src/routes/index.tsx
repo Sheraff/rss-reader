@@ -6,10 +6,11 @@ import styles from "./-index.module.css"
 import { getUserId } from "#/sso/getUserId"
 import { inngest } from "#/inngest/inngest"
 import * as v from "valibot"
+import { useNotifications } from "#/sse/useNotifications"
+import { useState } from "react"
 
 /**
  * TODO
- * - setup SSE (or WS) per user for real-time feed updates
  * - adding a feed should itself be an inngest function: check if feed url is valid, if it yields an RSS feed, if not search for RSS feed links in the HTML, etc.
  */
 
@@ -115,6 +116,7 @@ function HomePage() {
 	const feeds = Route.useLoaderData()
 	const router = useRouter()
 
+
 	const handleAddFeed = async (e: React.FormEvent<HTMLFormElement>) => {
 		e.preventDefault()
 		const form = e.currentTarget
@@ -194,14 +196,18 @@ function HomePage() {
 		<div className={styles.container}>
 			<div className={styles.header}>
 				<h1 className={styles.title}>My Feeds</h1>
-				<button
-					type="button"
-					className={styles.addFeedButton}
-					commandfor="add-feed-dialog" command="show-modal"
-				>
-					Add Feed
-				</button>
+				<div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+					<button
+						type="button"
+						className={styles.addFeedButton}
+						commandfor="add-feed-dialog" command="show-modal"
+					>
+						Add Feed
+					</button>
+				</div>
 			</div>
+
+
 
 			<ul className={styles.feedList}>
 				{feeds.map((feed) => (

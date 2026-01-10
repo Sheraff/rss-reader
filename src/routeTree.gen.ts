@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as FeedIdRouteImport } from './routes/feed/$id'
+import { Route as ApiNotificationsRouteImport } from './routes/api/notifications'
 import { Route as ApiInngestRouteImport } from './routes/api/inngest'
 import { Route as DemoStartServerFuncsRouteImport } from './routes/demo/start.server-funcs'
 import { Route as DemoStartApiRequestRouteImport } from './routes/demo/start.api-request'
@@ -28,6 +29,11 @@ const IndexRoute = IndexRouteImport.update({
 const FeedIdRoute = FeedIdRouteImport.update({
   id: '/feed/$id',
   path: '/feed/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiNotificationsRoute = ApiNotificationsRouteImport.update({
+  id: '/api/notifications',
+  path: '/api/notifications',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiInngestRoute = ApiInngestRouteImport.update({
@@ -74,6 +80,7 @@ const DemoStartSsrDataOnlyRoute = DemoStartSsrDataOnlyRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/api/inngest': typeof ApiInngestRoute
+  '/api/notifications': typeof ApiNotificationsRoute
   '/feed/$id': typeof FeedIdRoute
   '/demo/api/names': typeof DemoApiNamesRoute
   '/demo/start/api-request': typeof DemoStartApiRequestRoute
@@ -86,6 +93,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/api/inngest': typeof ApiInngestRoute
+  '/api/notifications': typeof ApiNotificationsRoute
   '/feed/$id': typeof FeedIdRoute
   '/demo/api/names': typeof DemoApiNamesRoute
   '/demo/start/api-request': typeof DemoStartApiRequestRoute
@@ -99,6 +107,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/api/inngest': typeof ApiInngestRoute
+  '/api/notifications': typeof ApiNotificationsRoute
   '/feed/$id': typeof FeedIdRoute
   '/demo/api/names': typeof DemoApiNamesRoute
   '/demo/start/api-request': typeof DemoStartApiRequestRoute
@@ -113,6 +122,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/api/inngest'
+    | '/api/notifications'
     | '/feed/$id'
     | '/demo/api/names'
     | '/demo/start/api-request'
@@ -125,6 +135,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/api/inngest'
+    | '/api/notifications'
     | '/feed/$id'
     | '/demo/api/names'
     | '/demo/start/api-request'
@@ -137,6 +148,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/api/inngest'
+    | '/api/notifications'
     | '/feed/$id'
     | '/demo/api/names'
     | '/demo/start/api-request'
@@ -150,6 +162,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ApiInngestRoute: typeof ApiInngestRoute
+  ApiNotificationsRoute: typeof ApiNotificationsRoute
   FeedIdRoute: typeof FeedIdRoute
   DemoApiNamesRoute: typeof DemoApiNamesRoute
   DemoStartApiRequestRoute: typeof DemoStartApiRequestRoute
@@ -174,6 +187,13 @@ declare module '@tanstack/react-router' {
       path: '/feed/$id'
       fullPath: '/feed/$id'
       preLoaderRoute: typeof FeedIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/notifications': {
+      id: '/api/notifications'
+      path: '/api/notifications'
+      fullPath: '/api/notifications'
+      preLoaderRoute: typeof ApiNotificationsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/inngest': {
@@ -238,6 +258,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ApiInngestRoute: ApiInngestRoute,
+  ApiNotificationsRoute: ApiNotificationsRoute,
   FeedIdRoute: FeedIdRoute,
   DemoApiNamesRoute: DemoApiNamesRoute,
   DemoStartApiRequestRoute: DemoStartApiRequestRoute,
