@@ -10,6 +10,6 @@ export const getRouter = () =>
 		context: {},
 		scrollRestoration: true,
 		defaultPreloadStaleTime: 30_000,
-		defaultPreload: 'intent',
+		defaultPreload: "intent",
 		defaultNotFoundComponent: () => <div>404 - Page Not Found</div>
 	})

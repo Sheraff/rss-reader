@@ -3,42 +3,38 @@ import { createServerFn } from "@tanstack/react-start"
 import { getDatabase } from "#/db"
 import type { FeedWithSubscription } from "#/db/types"
 import styles from "./-index.module.css"
-import * as v from "valibot"
+import { getUserId } from "#/sso/getUserId"
 
 const getUserFeeds = createServerFn({
 	method: "GET"
+}).handler(async ({ signal }) => {
+	const userId = await getUserId({ signal })
+	const db = getDatabase()
+	return db
+		.prepare<[userId: string], FeedWithSubscription>(`
+			SELECT 
+				f.id,
+				f.url,
+				f.title,
+				f.description,
+				f.image_url,
+				f.icon_url,
+				f.link,
+				f.last_fetched_at,
+				f.last_success_at,
+				s.category,
+				s.created_at as subscribed_at
+			FROM feeds f
+			INNER JOIN subscriptions s ON f.id = s.feed_id
+			WHERE s.user_id = ?
+			ORDER BY f.title ASC
+		`)
+		.all(userId)
 })
-	.inputValidator(
-		v.object({
-			userId: v.string()
-		})
-	)
-	.handler((ctx) =>
-		getDatabase()
-			.prepare<[userId: string], FeedWithSubscription>(`
-				SELECT 
-					f.id,
-					f.url,
-					f.title,
-					f.description,
-					f.image_url,
-					f.icon_url,
-					f.link,
-					f.last_fetched_at,
-					f.last_success_at,
-					s.category,
-					s.created_at as subscribed_at
-				FROM feeds f
-				INNER JOIN subscriptions s ON f.id = s.feed_id
-				WHERE s.user_id = ?
-				ORDER BY f.title ASC
-			`)
-			.all(ctx.data.userId)
-	)
 
 export const Route = createFileRoute("/")({
 	component: HomePage,
-	loader: ({ context }) => getUserFeeds({ data: { userId: context.userId } }),
+	loader: ({ abortController }) => getUserFeeds({ signal: abortController.signal })
 })
 
 function HomePage() {
