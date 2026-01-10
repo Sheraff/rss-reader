@@ -25,6 +25,7 @@
     "@tanstack/react-router-ssr-query": "1.147.0",
     "@tanstack/react-start": "1.147.0",
     "@tanstack/router-plugin": "1.147.0",
+    "better-sqlite3": "12.6.0",
     "inngest": "3.49.1",
     "nitro": "latest",
     "react": "19.2.3",
@@ -37,8 +38,8 @@
     "@types/react-dom": "19.2.3",
     "@vitejs/plugin-react": "5.1.2",
     "inngest-cli": "1.16.0",
-    "oxfmt": "^0.23.0",
-    "oxlint": "^1.38.0",
+    "oxfmt": "0.23.0",
+    "oxlint": "1.38.0",
     "turbo": "2.7.3",
     "typescript": "5.9.3",
     "vite": "7.3.1"
