@@ -10,7 +10,7 @@ import { getCookie } from '@tanstack/react-start/server'
 
 const ssoClient = process.env.NODE_ENV === 'production' ? createSsoClient('foo') : null
 
-const authProtected = createServerFn().handler(async ({ signal }) => {
+const authProtected = createServerFn({ method: 'GET' }).handler(async ({ signal }) => {
   if (!ssoClient) return
   const auth = await ssoClient.checkAuth(getCookie(COOKIE_NAME), 'rss.florianpellet.com', '/', signal)
   if (auth.authenticated) return
