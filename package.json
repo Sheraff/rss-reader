@@ -29,7 +29,8 @@
     "inngest": "3.49.1",
     "nitro": "latest",
     "react": "19.2.3",
-    "react-dom": "19.2.3"
+    "react-dom": "19.2.3",
+    "valibot": "^1.2.0"
   },
   "devDependencies": {
     "@tanstack/devtools-vite": "0.4.1",
