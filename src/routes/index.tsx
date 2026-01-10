@@ -102,7 +102,8 @@ function HomePage() {
 
 	const handleAddFeed = async (e: React.FormEvent<HTMLFormElement>) => {
 		e.preventDefault()
-		const formData = new FormData(e.currentTarget)
+		const form = e.currentTarget
+		const formData = new FormData(form)
 		const feedUrl = formData.get("feedUrl") as string | null
 
 		if (!feedUrl) {
@@ -113,10 +114,10 @@ function HomePage() {
 		try {
 			await addFeedSubscription({ data: { feedUrl } })
 			// Close the dialog
-			const dialog = e.currentTarget.closest<HTMLDialogElement>("dialog")
+			const dialog = form.closest<HTMLDialogElement>("dialog")
 			dialog?.close()
 			// Reset form
-			e.currentTarget.reset()
+			form.reset()
 			// // Refresh the page to show new feed
 			// window.location.reload()
 		} catch (error) {
