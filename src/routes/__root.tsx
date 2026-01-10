@@ -3,13 +3,8 @@ import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools"
 import { TanStackDevtools } from "@tanstack/react-devtools"
 
 import appCss from "../styles.css?raw"
-import { getUserId } from "#/sso/getUserId"
 
 export const Route = createRootRoute({
-	beforeLoad: async ({ abortController }) => {
-		// just an auth check, not using the result here
-		await getUserId({ signal: abortController.signal })
-	},
 	head: () => ({
 		meta: [
 			{

@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router"
+import { createFileRoute, Link, notFound } from "@tanstack/react-router"
 import { createServerFn } from "@tanstack/react-start"
 import { getDatabase } from "#/db"
 import type { Article, Feed } from "#/db/types"
@@ -23,7 +23,7 @@ const getFeedArticles = createServerFn({
 			.get(userId, feedId)
 
 		if (!subscription) {
-			throw new Error("Feed not found or not subscribed")
+			throw notFound()
 		}
 
 		// Get feed details
@@ -34,7 +34,7 @@ const getFeedArticles = createServerFn({
 			.get(feedId)
 
 		if (!feed) {
-			throw new Error("Feed not found")
+			throw notFound()
 		}
 
 		// Get articles

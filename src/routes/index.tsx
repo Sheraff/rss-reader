@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router"
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router"
 import { createServerFn } from "@tanstack/react-start"
 import { getDatabase } from "#/db"
 import type { FeedWithSubscription } from "#/db/types"
@@ -99,6 +99,7 @@ export const Route = createFileRoute("/")({
 
 function HomePage() {
 	const feeds = Route.useLoaderData()
+	const router = useRouter()
 
 	const handleAddFeed = async (e: React.FormEvent<HTMLFormElement>) => {
 		e.preventDefault()
@@ -118,6 +119,7 @@ function HomePage() {
 			dialog?.close()
 			// Reset form
 			form.reset()
+			router.invalidate({ filter: (r) => r.routeId === Route.id })
 			// // Refresh the page to show new feed
 			// window.location.reload()
 		} catch (error) {
