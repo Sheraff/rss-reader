@@ -5,30 +5,37 @@
   "imports": {
     "#/*": "./src/*"
   },
+  "packageManager": "pnpm@10.13.1",
   "scripts": {
-    "dev": "vite dev --port 3000",
+    "dev": "turbo run dev:app dev:inngest",
+    "dev:app": "vite dev --port 3000",
+    "dev:inngest": "inngest-cli dev -u http://localhost:3000/api/inngest",
     "build": "vite build",
     "preview": "vite preview",
     "tsc": "tsc --noEmit"
   },
   "dependencies": {
-    "@tanstack/react-devtools": "^0.7.0",
-    "@tanstack/react-router": "^1.132.0",
-    "@tanstack/react-router-devtools": "^1.132.0",
-    "@tanstack/react-router-ssr-query": "^1.131.7",
-    "@tanstack/react-start": "^1.132.0",
-    "@tanstack/router-plugin": "^1.132.0",
+    "@sso/client": "github:sheraff/sso#main&path:/client",
+    "@tanstack/react-devtools": "0.9.2",
+    "@tanstack/react-router": "1.147.0",
+    "@tanstack/react-router-devtools": "1.147.0",
+    "@tanstack/react-router-ssr-query": "1.147.0",
+    "@tanstack/react-start": "1.147.0",
+    "@tanstack/router-plugin": "1.147.0",
+    "inngest": "3.49.1",
     "nitro": "latest",
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0"
+    "react": "19.2.3",
+    "react-dom": "19.2.3"
   },
   "devDependencies": {
-    "@tanstack/devtools-vite": "^0.3.11",
-    "@types/node": "^22.10.2",
-    "@types/react": "^19.2.0",
-    "@types/react-dom": "^19.2.0",
-    "@vitejs/plugin-react": "^5.0.4",
-    "typescript": "^5.7.2",
-    "vite": "^7.1.7"
+    "@tanstack/devtools-vite": "0.4.1",
+    "@types/node": "25.0.5",
+    "@types/react": "19.2.8",
+    "@types/react-dom": "19.2.3",
+    "@vitejs/plugin-react": "5.1.2",
+    "inngest-cli": "1.16.0",
+    "turbo": "2.7.3",
+    "typescript": "5.9.3",
+    "vite": "7.3.1"
   }
 }
