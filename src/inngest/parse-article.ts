@@ -8,9 +8,8 @@ export const parseArticle = inngest.createFunction(
 	{
 		id: "parse-article",
 		retries: 3,
-		rateLimit: {
+		concurrency: {
 			limit: 1,
-			period: "1m",
 			key: "event.data.feedId"
 		}
 	},

@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router"
+import { createFileRoute, Link } from "@tanstack/react-router"
 import { createServerFn } from "@tanstack/react-start"
 import { getDatabase } from "#/db"
 import type { FeedWithSubscription } from "#/db/types"
@@ -189,19 +189,21 @@ function HomePage() {
 			<ul className={styles.feedList}>
 				{feeds.map((feed) => (
 					<li key={feed.id} className={styles.feedItem}>
-						{feed.image_url && <img src={feed.image_url} alt="" className={styles.feedImage} />}
-						<div className={styles.feedContent}>
-							<h2 className={styles.feedTitle}>{feed.title || "Untitled Feed"}</h2>
-							{feed.description && <p className={styles.feedDescription}>{feed.description}</p>}
-							<div className={styles.feedMeta}>
-								{feed.category && <span className={styles.category}>{feed.category}</span>}
-								{feed.last_success_at && (
-									<span className={styles.lastUpdated}>
-										Last updated: {new Date(feed.last_success_at).toLocaleDateString()}
-									</span>
-								)}
+						<Link to="/feed/$id" params={{ id: feed.id }} style={{ display: "flex", gap: "1rem", textDecoration: "none", color: "inherit" }}>
+							{feed.image_url && <img src={feed.image_url} alt="" className={styles.feedImage} />}
+							<div className={styles.feedContent}>
+								<h2 className={styles.feedTitle}>{feed.title || "Untitled Feed"}</h2>
+								{feed.description && <p className={styles.feedDescription}>{feed.description}</p>}
+								<div className={styles.feedMeta}>
+									{feed.category && <span className={styles.category}>{feed.category}</span>}
+									{feed.last_success_at && (
+										<span className={styles.lastUpdated}>
+											Last updated: {new Date(feed.last_success_at).toLocaleDateString()}
+										</span>
+									)}
+								</div>
 							</div>
-						</div>
+						</Link>
 					</li>
 				))}
 			</ul>

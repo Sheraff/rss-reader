@@ -1,0 +1,128 @@
+.container {
+	max-width: 900px;
+	margin: 0 auto;
+	padding: 2rem;
+}
+
+.backLink {
+	color: #007bff;
+	text-decoration: none;
+	display: inline-block;
+	margin-bottom: 2rem;
+}
+
+.backLink:hover {
+	text-decoration: underline;
+}
+
+.header {
+	margin-bottom: 2rem;
+}
+
+.headerContent {
+	display: flex;
+	align-items: start;
+	gap: 1rem;
+}
+
+.feedImage {
+	width: 64px;
+	height: 64px;
+	border-radius: 8px;
+	object-fit: cover;
+}
+
+.feedInfo h1 {
+	margin: 0 0 0.5rem 0;
+}
+
+.feedDescription {
+	margin: 0 0 0.5rem 0;
+	color: #666;
+}
+
+.feedLink {
+	color: #007bff;
+	text-decoration: none;
+	font-size: 0.9rem;
+}
+
+.feedLink:hover {
+	text-decoration: underline;
+}
+
+.emptyState {
+	text-align: center;
+	padding: 3rem 1rem;
+	color: #666;
+}
+
+.emptyState p:first-child {
+	margin-top: 0;
+}
+
+.emptyState p:last-child {
+	font-size: 0.9rem;
+}
+
+.articlesHeader {
+	font-size: 1.2rem;
+	margin-bottom: 1rem;
+}
+
+.articleList {
+	list-style: none;
+	padding: 0;
+	margin: 0;
+}
+
+.articleItem {
+	display: block;
+	border: 1px solid #e0e0e0;
+	border-radius: 8px;
+	padding: 1.5rem;
+	margin-bottom: 1rem;
+	text-decoration: none;
+	color: inherit;
+	transition: all 0.2s ease;
+}
+
+.articleItem:hover {
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+	transform: translateY(-2px);
+}
+
+.articleContent {
+	display: flex;
+	justify-content: space-between;
+	align-items: start;
+}
+
+.articleInfo {
+	flex: 1;
+}
+
+.articleTitle {
+	margin: 0 0 0.5rem 0;
+	font-size: 1.1rem;
+}
+
+.articleSummary {
+	margin: 0 0 0.75rem 0;
+	color: #666;
+	font-size: 0.95rem;
+	line-height: 1.5;
+}
+
+.articleMeta {
+	display: flex;
+	gap: 1rem;
+	font-size: 0.85rem;
+	color: #999;
+}
+
+.articleArrow {
+	margin-left: 1rem;
+	font-size: 1.5rem;
+	color: #007bff;
+}
