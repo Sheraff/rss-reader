@@ -40,6 +40,20 @@ const getUserFeeds = createServerFn({
 		.all(userId)
 })
 
+/**
+ * We need to change this server function: adding a feed should itself be an inngest function because there is a lot to do.
+ * 1. check if URL is already registered as a feed
+ *   1.1 if so, just return the feed id
+ * 2. check if URL actually responds anything
+ * 3. check if what it responds is a valid RSS feed
+ *   3.1 if so, then create feed row
+ *   3.2 then send event for feed parse
+ *   3.3 return the feed id
+ * 4. if it's not a valid RSS feed, search the HTML for an RSS feed URL. For each found, filter out those that do not respond with a valid RSS feed
+ *   4.1 if found a single one, loop back to step 1 with that
+ *   4.2 if found multiple, return a list of URLs
+ *   4.3 if found none, error out
+ */
 const addFeedSubscription = createServerFn({
 	method: "POST"
 })
