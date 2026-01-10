@@ -14,7 +14,7 @@ const authProtected = createServerFn({ method: 'GET' }).handler(async ({ signal 
   if (!ssoClient) return
   const auth = await ssoClient.checkAuth(getCookie(COOKIE_NAME), 'rss.florianpellet.com', '/', signal)
   if (auth.authenticated) return
-  throw redirect({ to: auth.redirect })
+  throw redirect({ href: auth.redirect })
 })
 
 export const Route = createRootRoute({
