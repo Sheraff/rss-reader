@@ -12,6 +12,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "start": "node .output/server/index.mjs",
+    "test": "vitest run",
     "tsc": "tsc --noEmit",
     "format": "oxfmt",
     "format:check": "oxfmt --check",
@@ -31,9 +32,11 @@
     "nitro": "latest",
     "react": "19.2.3",
     "react-dom": "19.2.3",
+    "rss-parser": "3.13.0",
     "valibot": "^1.2.0"
   },
   "devDependencies": {
+    "@inngest/test": "0.1.9",
     "@tanstack/devtools-vite": "0.4.1",
     "@types/better-sqlite3": "^7.6.13",
     "@types/node": "25.0.5",
@@ -45,7 +48,8 @@
     "oxlint": "1.38.0",
     "turbo": "2.7.3",
     "typescript": "5.9.3",
-    "vite": "7.3.1"
+    "vite": "7.3.1",
+    "vitest": "4.0.16"
   },
   "packageManager": "pnpm@10.13.1"
 }
