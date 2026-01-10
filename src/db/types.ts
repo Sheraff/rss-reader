@@ -7,7 +7,7 @@ export type ContentType = "text" | "html" | "xhtml"
 export type FetchStatus = "none" | "scheduled" | "complete" | "failed"
 
 export interface User {
-	id: number
+	id: string
 	created_at: string
 	updated_at: string
 }
@@ -123,6 +123,24 @@ export interface UserArticle {
 	read_at: string | null
 	created_at: string
 	updated_at: string
+}
+
+/**
+ * Joined query types
+ */
+
+export interface FeedWithSubscription {
+	id: number
+	url: string
+	title: string | null
+	description: string | null
+	image_url: string | null
+	icon_url: string | null
+	link: string | null
+	last_fetched_at: string | null
+	last_success_at: string | null
+	category: string | null
+	subscribed_at: string
 }
 
 /**

@@ -4,13 +4,12 @@ import { createRouter } from "@tanstack/react-router"
 import { routeTree } from "./routeTree.gen"
 
 // Create a new router instance
-export const getRouter = () => {
-	const router = createRouter({
+export const getRouter = () =>
+	createRouter({
 		routeTree,
 		context: {},
 		scrollRestoration: true,
-		defaultPreloadStaleTime: 0
+		defaultPreloadStaleTime: 30_000,
+		defaultPreload: 'intent',
+		defaultNotFoundComponent: () => <div>404 - Page Not Found</div>
 	})
-
-	return router
-}
