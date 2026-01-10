@@ -1,21 +1,7 @@
-import { EventSchemas, Inngest, type InngestFunction } from "inngest"
-import * as v from 'valibot'
+import { type InngestFunction } from "inngest"
 import { parseFeed } from "#/inngest/parse-feed"
-
-const schemas = new EventSchemas().fromSchema({
-	'test/hello.world': v.object({
-		email: v.pipe(v.string(), v.email()),
-	}),
-	'test/goodbye.world': v.object({
-		email: v.pipe(v.string(), v.email()),
-	}),
-	'feed/parse.requested': v.object({
-		feedId: v.number(),
-	}),
-})
-
-// Create a client to send and receive events
-export const inngest = new Inngest({ id: "rss-reader", schemas })
+import { parseArticle } from "#/inngest/parse-article"
+import { inngest } from "#/inngest/inngest"
 
 const helloWorld = inngest.createFunction(
 	{ id: "hello-world" },
@@ -37,4 +23,4 @@ const goodbyeWorld = inngest.createFunction(
 
 
 // Create an empty array where we'll export future Inngest functions
-export const functions = [helloWorld, goodbyeWorld, parseFeed] satisfies Array<InngestFunction<any, any, any>>
+export const functions = [helloWorld, goodbyeWorld, parseFeed, parseArticle] satisfies Array<InngestFunction<any, any, any>>

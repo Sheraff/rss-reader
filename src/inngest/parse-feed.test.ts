@@ -45,7 +45,7 @@ vi.mock('#/db/index.ts', () => ({
 }))
 
 describe('parseFeed function', () => {
-	let feedId: number
+	let feedId: number | bigint
 	let t: InngestTestEngine
 
 	beforeEach(() => {
@@ -60,7 +60,7 @@ describe('parseFeed function', () => {
 			VALUES (?, ?, ?)
 		`).run('https://example.com/feed.xml', 'rss', 1)
 
-		feedId = result.lastInsertRowid as number
+		feedId = result.lastInsertRowid
 
 		// Create test engine
 		t = new InngestTestEngine({ function: parseFeed })
@@ -93,6 +93,14 @@ describe('parseFeed function', () => {
 
 		const { result } = await t.execute({
 			events: [{ name: 'feed/parse.requested', data: { feedId } }],
+			steps: [
+				{
+					id: 'fan-out-parse-articles',
+					handler() {
+						// Mock step.sendEvent - no-op in tests
+					},
+				},
+			],
 		})
 
 		expect(result).toEqual({
@@ -104,7 +112,7 @@ describe('parseFeed function', () => {
 		})
 
 		// Verify feed was updated
-		const updatedFeed = testDb.prepare<[id: number], Feed>(`
+		const updatedFeed = testDb.prepare<[id: number | bigint], Feed>(`
 			SELECT * FROM feeds WHERE id = ?
 		`).get(feedId)!
 
@@ -119,7 +127,7 @@ describe('parseFeed function', () => {
 		expect(updatedFeed.fetch_error_count).toBe(0)
 
 		// Verify articles were inserted
-		const articles = testDb.prepare<[feedId: number], Article>(`
+		const articles = testDb.prepare<[feedId: number | bigint], Article>(`
 			SELECT * FROM articles WHERE feed_id = ? ORDER BY guid
 		`).all(feedId)
 
@@ -167,12 +175,12 @@ describe('parseFeed function', () => {
 		)
 
 		// Verify last_fetched_at was updated but no articles added
-		const feed = testDb.prepare<[id: number], Feed>(`
+		const feed = testDb.prepare<[id: number | bigint], Feed>(`
 			SELECT * FROM feeds WHERE id = ?
 		`).get(feedId)!
 		expect(feed.last_fetched_at).toBeTruthy()
 
-		const articleCount = testDb.prepare<[feedId: number], { count: number }>(`
+		const articleCount = testDb.prepare<[feedId: number | bigint], { count: number }>(`
 			SELECT COUNT(*) as count FROM articles WHERE feed_id = ?
 		`).get(feedId)!
 		expect(articleCount.count).toBe(0)
@@ -197,6 +205,14 @@ describe('parseFeed function', () => {
 
 		const { result } = await t.execute({
 			events: [{ name: 'feed/parse.requested', data: { feedId } }],
+			steps: [
+				{
+					id: 'fan-out-parse-articles',
+					handler() {
+						// Mock step.sendEvent - no-op in tests
+					},
+				},
+			],
 		})
 
 		// Should only insert 1 new article (article-2), article-1 already exists
@@ -209,7 +225,7 @@ describe('parseFeed function', () => {
 		})
 
 		// Verify only 2 articles total (1 existing + 1 new)
-		const articleCount = testDb.prepare<[feedId: number], { count: number }>(`
+		const articleCount = testDb.prepare<[feedId: number | bigint], { count: number }>(`
 			SELECT COUNT(*) as count FROM articles WHERE feed_id = ?
 		`).get(feedId)!
 		expect(articleCount.count).toBe(2)

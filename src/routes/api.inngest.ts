@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router"
 import { serve } from "inngest/edge"
-import { inngest, functions } from "#/inngest"
+import { inngest } from "#/inngest/inngest"
+import { functions } from "#/inngest"
 
 const handler = serve({ client: inngest, functions })
 

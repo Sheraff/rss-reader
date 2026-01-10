@@ -1,6 +1,6 @@
 import { getDatabase } from "#/db"
 import type { Feed } from "#/db/types"
-import { inngest } from "#/inngest"
+import { inngest } from "#/inngest/inngest"
 import { NonRetriableError } from "inngest"
 import Parser from "rss-parser"
 
@@ -139,7 +139,7 @@ export const parseFeed = inngest.createFunction(
 		})
 
 		// Insert articles (using INSERT OR IGNORE for deduplication)
-		const newArticles = await step.run("insert-articles", async () => {
+		const newArticleIds = await step.run("insert-articles", async () => {
 			const db = getDatabase()
 			const insertArticle = db.prepare<[
 				feed_id: number,
@@ -167,7 +167,7 @@ export const parseFeed = inngest.createFunction(
 				) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 			`)
 
-			let newArticles = 0
+			const newArticleIds: Array<number | bigint> = []
 			db.transaction(() => {
 				for (const item of parsedFeed.items ?? []) {
 					const result = insertArticle.run(
@@ -183,20 +183,33 @@ export const parseFeed = inngest.createFunction(
 						item.categories ? JSON.stringify(item.categories) : null
 					)
 					if (result.changes > 0) {
-						newArticles++
+						newArticleIds.push(result.lastInsertRowid)
 					}
 				}
 			})()
 
-			return newArticles
+			return newArticleIds
 		})
+
+		// Fan out to parse individual articles
+		if (newArticleIds.length > 0) {
+			await step.sendEvent("fan-out-parse-articles",
+				newArticleIds.map(articleId => ({
+					name: "article/parse",
+					data: {
+						feedId,
+						articleId,
+					},
+				}))
+			)
+		}
 
 		return {
 			feedId,
 			status: 'success',
 			feedTitle: parsedFeed.title,
 			totalItems: parsedFeed.items?.length ?? 0,
-			newArticles,
+			newArticles: newArticleIds.length,
 		}
 	}
 )

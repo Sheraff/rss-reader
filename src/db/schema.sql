@@ -70,17 +70,17 @@ CREATE TABLE IF NOT EXISTS articles (
   
   -- Content
   title TEXT NOT NULL,
-  content TEXT, -- Full content (HTML or text)
-  summary TEXT, -- Excerpt/summary
+  content TEXT, -- Full content (HTML from RSS or extracted via Readability)
+  summary TEXT, -- Excerpt/summary (from RSS or Readability)
   content_type TEXT DEFAULT 'html' CHECK (content_type IN ('text', 'html', 'xhtml')),
   
   -- Authorship
-  author_name TEXT,
+  author_name TEXT, -- Author name (from RSS or Readability byline)
   author_email TEXT,
   author_uri TEXT,
   
   -- Dates
-  published_at TIMESTAMP,
+  published_at TIMESTAMP, -- Publication date (from RSS or Readability publishedTime)
   updated_at TIMESTAMP,
   
   -- Categories/tags (stored as JSON array)
@@ -94,7 +94,7 @@ CREATE TABLE IF NOT EXISTS articles (
   -- Metadata
   comments_url TEXT,
   rights TEXT,
-  source_title TEXT,
+  source_title TEXT, -- Site/publication name (from RSS or Readability siteName)
   source_url TEXT,
   
   -- Fetch status tracking
