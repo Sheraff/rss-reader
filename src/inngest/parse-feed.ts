@@ -8,7 +8,7 @@ export const parseFeed = inngest.createFunction(
 	{
 		id: "parse-feed",
 		retries: 3,
-		concurrency: 2,
+		concurrency: 2
 	},
 	{ event: "feed/parse.requested" },
 	async ({ event, step }) => {
@@ -17,9 +17,11 @@ export const parseFeed = inngest.createFunction(
 		const feed = await step.run("validate-feed", () => {
 			const db = getDatabase()
 			// Validate feed exists and is active (outside steps - fast validation)
-			const feed = db.prepare<[id: number], Feed>(`
+			const feed = db
+				.prepare<[id: number], Feed>(`
 				SELECT * FROM feeds WHERE id = ?
-			`).get(feedId)
+			`)
+				.get(feedId)
 
 			if (!feed) {
 				throw new Error(`Feed with id ${feedId} not found`)
@@ -36,15 +38,15 @@ export const parseFeed = inngest.createFunction(
 		const fetchResult = await step.run("fetch-rss-feed", async () => {
 			const headers: HeadersInit = {}
 			if (feed.etag) {
-				headers['If-None-Match'] = feed.etag
+				headers["If-None-Match"] = feed.etag
 			}
 			if (feed.last_modified_header) {
-				headers['If-Modified-Since'] = feed.last_modified_header
+				headers["If-Modified-Since"] = feed.last_modified_header
 			}
 
 			const response = await fetch(feed.url, {
 				headers,
-				signal: AbortSignal.timeout(30_000),
+				signal: AbortSignal.timeout(30_000)
 			})
 
 			// Handle 304 Not Modified
@@ -57,8 +59,8 @@ export const parseFeed = inngest.createFunction(
 			}
 
 			const xml = await response.text()
-			const etag = response.headers.get('etag')
-			const lastModified = response.headers.get('last-modified')
+			const etag = response.headers.get("etag")
+			const lastModified = response.headers.get("last-modified")
 
 			return { xml, etag, lastModified, status: 200 as const }
 		})
@@ -76,8 +78,8 @@ export const parseFeed = inngest.createFunction(
 
 			return {
 				feedId,
-				status: 'not-modified',
-				message: 'Feed has not changed since last fetch'
+				status: "not-modified",
+				message: "Feed has not changed since last fetch"
 			}
 		}
 
@@ -87,26 +89,28 @@ export const parseFeed = inngest.createFunction(
 			try {
 				return parser.parseString(fetchResult.xml)
 			} catch (cause) {
-				throw new NonRetriableError('Failed to parse RSS feed XML', { cause })
+				throw new NonRetriableError("Failed to parse RSS feed XML", { cause })
 			}
 		})
 
 		// Update feed metadata
 		await step.run("update-feed-metadata", () => {
 			const db = getDatabase()
-			db.prepare<[
-				title: string | null,
-				description: string | null,
-				link: string | null,
-				language: string | null,
-				author_name: string | null,
-				image_url: string | null,
-				image_title: string | null,
-				last_build_date: string | null,
-				etag: string | null,
-				last_modified_header: string | null,
-				id: number
-			]>(`
+			db.prepare<
+				[
+					title: string | null,
+					description: string | null,
+					link: string | null,
+					language: string | null,
+					author_name: string | null,
+					image_url: string | null,
+					image_title: string | null,
+					last_build_date: string | null,
+					etag: string | null,
+					last_modified_header: string | null,
+					id: number
+				]
+			>(`
 				UPDATE feeds
 				SET 
 					title = ?,
@@ -142,18 +146,20 @@ export const parseFeed = inngest.createFunction(
 		// Insert articles (using INSERT OR IGNORE for deduplication)
 		const newArticleIds = await step.run("insert-articles", () => {
 			const db = getDatabase()
-			const insertArticle = db.prepare<[
-				feed_id: number,
-				guid: string,
-				guid_is_permalink: number,
-				url: string | null,
-				title: string,
-				content: string | null,
-				summary: string | null,
-				author_name: string | null,
-				published_at: string | null,
-				categories: string | null
-			]>(`
+			const insertArticle = db.prepare<
+				[
+					feed_id: number,
+					guid: string,
+					guid_is_permalink: number,
+					url: string | null,
+					title: string,
+					content: string | null,
+					summary: string | null,
+					author_name: string | null,
+					published_at: string | null,
+					categories: string | null
+				]
+			>(`
 				INSERT OR IGNORE INTO articles (
 				feed_id,
 				guid,
@@ -173,13 +179,21 @@ export const parseFeed = inngest.createFunction(
 				for (const item of parsedFeed.items ?? []) {
 					const result = insertArticle.run(
 						feedId,
-						item.guid ?? item.link ?? item.title ?? 'unknown',
+						item.guid ?? item.link ?? item.title ?? "unknown",
 						item.guid && item.guid === item.link ? 1 : 0,
 						item.link ?? null,
-						item.title ?? 'Untitled',
-						typeof item.content === 'string' ? item.content : (typeof item['content:encoded'] === 'string' ? item['content:encoded'] : null),
+						item.title ?? "Untitled",
+						typeof item.content === "string"
+							? item.content
+							: typeof item["content:encoded"] === "string"
+								? item["content:encoded"]
+								: null,
 						item.contentSnippet ?? item.summary ?? null,
-						typeof item.creator === 'string' ? item.creator : (typeof item.author === 'string' ? item.author : null),
+						typeof item.creator === "string"
+							? item.creator
+							: typeof item.author === "string"
+								? item.author
+								: null,
 						item.pubDate ? new Date(item.pubDate).toISOString() : null,
 						item.categories ? JSON.stringify(item.categories) : null
 					)
@@ -194,23 +208,24 @@ export const parseFeed = inngest.createFunction(
 
 		// Fan out to parse individual articles
 		if (newArticleIds.length > 0) {
-			await step.sendEvent("fan-out-parse-articles",
-				newArticleIds.map(articleId => ({
+			await step.sendEvent(
+				"fan-out-parse-articles",
+				newArticleIds.map((articleId) => ({
 					name: "article/parse",
 					data: {
 						feedId,
-						articleId,
-					},
+						articleId
+					}
 				}))
 			)
 		}
 
 		return {
 			feedId,
-			status: 'success',
+			status: "success",
 			feedTitle: parsedFeed.title,
 			totalItems: parsedFeed.items?.length ?? 0,
-			newArticles: newArticleIds.length,
+			newArticles: newArticleIds.length
 		}
 	}
 )

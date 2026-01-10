@@ -1,6 +1,6 @@
-import Database from 'better-sqlite3'
-import { join } from 'node:path'
-import schema from './schema.sql?raw'
+import Database from "better-sqlite3"
+import { join } from "node:path"
+import schema from "./schema.sql?raw"
 
 let db: Database.Database | null = null
 
@@ -16,7 +16,7 @@ export function getDatabase(path?: string): Database.Database {
 		return db
 	}
 
-	process.addListener('beforeExit', () => {
+	process.addListener("beforeExit", () => {
 		if (db) {
 			db.close()
 			db = null
@@ -24,18 +24,17 @@ export function getDatabase(path?: string): Database.Database {
 	})
 
 	// Determine database path from argument, env var, or default
-	const dbPath = path ?? process.env.DB_PATH ?? join(process.cwd(), 'rss-reader.db')
+	const dbPath = path ?? process.env.DB_PATH ?? join(process.cwd(), "rss-reader.db")
 	db = new Database(dbPath)
 
 	// Enable foreign keys
-	db.pragma('foreign_keys = ON')
+	db.pragma("foreign_keys = ON")
 
 	// WAL mode for better concurrency
-	db.pragma('journal_mode = WAL')
+	db.pragma("journal_mode = WAL")
 
 	// Execute all statements in the schema
 	db.exec(schema)
 
 	return db
 }
-

@@ -5,8 +5,8 @@ import viteReact from "@vitejs/plugin-react"
 import { nitro } from "nitro/vite"
 
 const config = defineConfig({
-  clearScreen: false,
-  plugins: [devtools(), nitro(), tanstackStart(), viteReact()]
+	clearScreen: false,
+	plugins: [devtools(), nitro(), tanstackStart(), viteReact()]
 })
 
 export default config

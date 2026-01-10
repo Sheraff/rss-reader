@@ -2,9 +2,9 @@
  * Database table type definitions
  */
 
-export type FeedType = 'rss' | 'atom'
-export type ContentType = 'text' | 'html' | 'xhtml'
-export type FetchStatus = 'none' | 'scheduled' | 'complete' | 'failed'
+export type FeedType = "rss" | "atom"
+export type ContentType = "text" | "html" | "xhtml"
+export type FetchStatus = "none" | "scheduled" | "complete" | "failed"
 
 export interface User {
 	id: number

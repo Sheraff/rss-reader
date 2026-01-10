@@ -11,8 +11,8 @@ export const parseArticle = inngest.createFunction(
 		rateLimit: {
 			limit: 1,
 			period: "1m",
-			key: "event.data.feedId",
-		},
+			key: "event.data.feedId"
+		}
 	},
 	{ event: "article/parse" },
 	async ({ event, step }) => {
@@ -21,9 +21,11 @@ export const parseArticle = inngest.createFunction(
 		// Fetch article from database
 		const article = await step.run("fetch-article", () => {
 			const db = getDatabase()
-			const article = db.prepare<[id: number], Article>(`
+			const article = db
+				.prepare<[id: number], Article>(`
 				SELECT * FROM articles WHERE id = ?
-			`).get(articleId)
+			`)
+				.get(articleId)
 
 			if (!article) {
 				throw new Error(`Article with id ${articleId} not found`)
@@ -40,11 +42,11 @@ export const parseArticle = inngest.createFunction(
 		const html = await step.run("fetch-article-html", async () => {
 			const response = await fetch(article.url!, {
 				headers: {
-					'User-Agent': 'RSS-Reader/1.0',
-					'Accept': 'text/html,application/xhtml+xml',
+					"User-Agent": "RSS-Reader/1.0",
+					Accept: "text/html,application/xhtml+xml"
 				},
 				signal: AbortSignal.timeout(20_000),
-				redirect: 'follow',
+				redirect: "follow"
 			})
 
 			if (!response.ok) {
@@ -61,7 +63,7 @@ export const parseArticle = inngest.createFunction(
 			const article = reader.parse()
 
 			if (!article) {
-				throw new Error('Failed to extract article content with Readability')
+				throw new Error("Failed to extract article content with Readability")
 			}
 
 			return article
@@ -70,15 +72,17 @@ export const parseArticle = inngest.createFunction(
 		// Update article in database with extracted content
 		await step.run("update-article-content", () => {
 			const db = getDatabase()
-			db.prepare<[
-				content: string,
-				summary: string | null,
-				author_name: string | null,
-				source_title: string | null,
-				published_at: string | null,
-				fetch_status: 'complete',
-				id: number
-			]>(`
+			db.prepare<
+				[
+					content: string,
+					summary: string | null,
+					author_name: string | null,
+					source_title: string | null,
+					published_at: string | null,
+					fetch_status: "complete",
+					id: number
+				]
+			>(`
 				UPDATE articles
 				SET 
 					content = ?,
@@ -89,12 +93,12 @@ export const parseArticle = inngest.createFunction(
 					fetch_status = ?
 				WHERE id = ?
 			`).run(
-				parsed.content ?? '',
+				parsed.content ?? "",
 				parsed.excerpt ?? null,
 				parsed.byline ?? null,
 				parsed.siteName ?? null,
 				parsed.publishedTime ?? null,
-				'complete',
+				"complete",
 				articleId
 			)
 		})
@@ -102,9 +106,9 @@ export const parseArticle = inngest.createFunction(
 		return {
 			articleId,
 			feedId,
-			status: 'success',
+			status: "success",
 			title: parsed.title,
-			contentLength: parsed.length,
+			contentLength: parsed.length
 		}
 	}
 )

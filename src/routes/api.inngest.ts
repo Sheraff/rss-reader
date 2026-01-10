@@ -6,11 +6,11 @@ import { functions } from "#/inngest"
 const handler = serve({ client: inngest, functions })
 
 export const Route = createFileRoute("/api/inngest")({
-  server: {
-    handlers: {
-      GET: ({ request }) => handler(request),
-      POST: ({ request }) => handler(request),
-      PUT: ({ request }) => handler(request),
-    }
-  }
+	server: {
+		handlers: {
+			GET: ({ request }) => handler(request),
+			POST: ({ request }) => handler(request),
+			PUT: ({ request }) => handler(request)
+		}
+	}
 })
