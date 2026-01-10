@@ -6,8 +6,12 @@ let db: Database.Database | null = null
 
 /**
  * Get or create the SQLite database instance
+ * @param path - Optional database path. Supports:
+ *   - Absolute file path
+ *   - ':memory:' for in-memory database (useful for tests)
+ *   - Defaults to DB_PATH env variable or 'rss-reader.db' in project root
  */
-export function getDatabase(): Database.Database {
+export function getDatabase(path?: string): Database.Database {
 	if (db) {
 		return db
 	}
@@ -19,8 +23,8 @@ export function getDatabase(): Database.Database {
 		}
 	})
 
-	// Create database file in project root
-	const dbPath = join(process.cwd(), 'rss-reader.db')
+	// Determine database path from argument, env var, or default
+	const dbPath = path ?? process.env.DB_PATH ?? join(process.cwd(), 'rss-reader.db')
 	db = new Database(dbPath)
 
 	// Enable foreign keys
