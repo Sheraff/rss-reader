@@ -4,6 +4,26 @@ import schema from "./schema.sql?raw"
 
 let db: Database.Database | null = null
 
+const cleanup = () => {
+	if (db) {
+		console.log("\nClosing database connection...")
+		try {
+			db.close()
+		} catch (err) {
+			console.error("Error closing database:", err)
+		}
+		db = null
+	}
+}
+process.on("SIGINT", () => {
+	cleanup()
+	process.exit(130)
+})
+process.on("SIGTERM", () => {
+	cleanup()
+	process.exit(0)
+})
+
 /**
  * Get or create the SQLite database instance
  * @param path - Optional database path. Supports:
@@ -16,15 +36,8 @@ export function getDatabase(path?: string): Database.Database {
 		return db
 	}
 
-	process.addListener("beforeExit", () => {
-		if (db) {
-			db.close()
-			db = null
-		}
-	})
-
 	// Determine database path from argument, env var, or default
-	const dbPath = path ?? process.env.DB_PATH ?? join(process.cwd(), "rss-reader.db")
+	const dbPath = path ?? process.env.DB_PATH ?? join(process.cwd(), "rss-reader.sqlite")
 	db = new Database(dbPath)
 
 	// Enable foreign keys

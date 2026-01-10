@@ -27,15 +27,17 @@ export const scheduleFeedUpdates = inngest.createFunction(
 		})
 
 		// Schedule parse-feed for each active feed
-		await step.sendEvent(
-			"schedule-parse-feed",
-			feedsIds.map((feedId) => ({
-				name: "feed/parse.requested",
-				data: {
-					feedId
-				}
-			}))
-		)
+		if (feedsIds.length > 0) {
+			await step.sendEvent(
+				"schedule-parse-feed",
+				feedsIds.map((feedId) => ({
+					name: "feed/parse.requested",
+					data: {
+						feedId
+					}
+				}))
+			)
+		}
 
 		return {
 			scheduledFeeds: feedsIds.length,

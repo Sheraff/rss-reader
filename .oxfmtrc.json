@@ -2,6 +2,6 @@
 	"$schema": "./node_modules/oxfmt/configuration_schema.json",
 	"trailingComma": "none",
 	"semi": false,
-	"ignorePatterns": ["./src/routeTree.gen.ts"],
+	"ignorePatterns": ["src/routeTree.gen.ts"],
 	"useTabs": true
 }
