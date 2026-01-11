@@ -8,7 +8,7 @@ const config = defineConfig({
 	clearScreen: false,
 	plugins: [
 		devtools({ enhancedLogs: { enabled: false } }),
-		nitro(), tanstackStart(), viteReact()]
+		tanstackStart(), nitro(), viteReact()]
 })
 
 export default config
