@@ -171,9 +171,7 @@ function ArticlePage() {
 		return () => window.removeEventListener("scroll", handleScroll)
 	}, [article.id, userArticle?.is_read])
 
-	const hasContent = article.content// && article.fetch_status === "complete"
-
-	console.log("Article content:", article)
+	const hasContent = article.content && article.fetch_status === "complete"
 
 	return (
 		<div className={styles.container}>

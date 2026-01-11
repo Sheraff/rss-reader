@@ -10,7 +10,6 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as FeedSlugRouteImport } from './routes/feed/$slug'
 import { Route as ApiNotificationsRouteImport } from './routes/api/notifications'
 import { Route as ApiInngestRouteImport } from './routes/api/inngest'
 import { Route as FeedSlugIndexRouteImport } from './routes/feed/$slug.index'
@@ -19,11 +18,6 @@ import { Route as FeedSlugArticleSlugRouteImport } from './routes/feed/$slug.$ar
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const FeedSlugRoute = FeedSlugRouteImport.update({
-  id: '/feed/$slug',
-  path: '/feed/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiNotificationsRoute = ApiNotificationsRouteImport.update({
@@ -37,23 +31,22 @@ const ApiInngestRoute = ApiInngestRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const FeedSlugIndexRoute = FeedSlugIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => FeedSlugRoute,
+  id: '/feed/$slug/',
+  path: '/feed/$slug/',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const FeedSlugArticleSlugRoute = FeedSlugArticleSlugRouteImport.update({
-  id: '/$articleSlug',
-  path: '/$articleSlug',
-  getParentRoute: () => FeedSlugRoute,
+  id: '/feed/$slug/$articleSlug',
+  path: '/feed/$slug/$articleSlug',
+  getParentRoute: () => rootRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/api/inngest': typeof ApiInngestRoute
   '/api/notifications': typeof ApiNotificationsRoute
-  '/feed/$slug': typeof FeedSlugRouteWithChildren
   '/feed/$slug/$articleSlug': typeof FeedSlugArticleSlugRoute
-  '/feed/$slug/': typeof FeedSlugIndexRoute
+  '/feed/$slug': typeof FeedSlugIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -67,7 +60,6 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/api/inngest': typeof ApiInngestRoute
   '/api/notifications': typeof ApiNotificationsRoute
-  '/feed/$slug': typeof FeedSlugRouteWithChildren
   '/feed/$slug/$articleSlug': typeof FeedSlugArticleSlugRoute
   '/feed/$slug/': typeof FeedSlugIndexRoute
 }
@@ -77,9 +69,8 @@ export interface FileRouteTypes {
     | '/'
     | '/api/inngest'
     | '/api/notifications'
-    | '/feed/$slug'
     | '/feed/$slug/$articleSlug'
-    | '/feed/$slug/'
+    | '/feed/$slug'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -92,7 +83,6 @@ export interface FileRouteTypes {
     | '/'
     | '/api/inngest'
     | '/api/notifications'
-    | '/feed/$slug'
     | '/feed/$slug/$articleSlug'
     | '/feed/$slug/'
   fileRoutesById: FileRoutesById
@@ -101,7 +91,8 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ApiInngestRoute: typeof ApiInngestRoute
   ApiNotificationsRoute: typeof ApiNotificationsRoute
-  FeedSlugRoute: typeof FeedSlugRouteWithChildren
+  FeedSlugArticleSlugRoute: typeof FeedSlugArticleSlugRoute
+  FeedSlugIndexRoute: typeof FeedSlugIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -111,13 +102,6 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/feed/$slug': {
-      id: '/feed/$slug'
-      path: '/feed/$slug'
-      fullPath: '/feed/$slug'
-      preLoaderRoute: typeof FeedSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/notifications': {
@@ -136,40 +120,27 @@ declare module '@tanstack/react-router' {
     }
     '/feed/$slug/': {
       id: '/feed/$slug/'
-      path: '/'
-      fullPath: '/feed/$slug/'
+      path: '/feed/$slug'
+      fullPath: '/feed/$slug'
       preLoaderRoute: typeof FeedSlugIndexRouteImport
-      parentRoute: typeof FeedSlugRoute
+      parentRoute: typeof rootRouteImport
     }
     '/feed/$slug/$articleSlug': {
       id: '/feed/$slug/$articleSlug'
-      path: '/$articleSlug'
+      path: '/feed/$slug/$articleSlug'
       fullPath: '/feed/$slug/$articleSlug'
       preLoaderRoute: typeof FeedSlugArticleSlugRouteImport
-      parentRoute: typeof FeedSlugRoute
+      parentRoute: typeof rootRouteImport
     }
   }
 }
-
-interface FeedSlugRouteChildren {
-  FeedSlugArticleSlugRoute: typeof FeedSlugArticleSlugRoute
-  FeedSlugIndexRoute: typeof FeedSlugIndexRoute
-}
-
-const FeedSlugRouteChildren: FeedSlugRouteChildren = {
-  FeedSlugArticleSlugRoute: FeedSlugArticleSlugRoute,
-  FeedSlugIndexRoute: FeedSlugIndexRoute,
-}
-
-const FeedSlugRouteWithChildren = FeedSlugRoute._addFileChildren(
-  FeedSlugRouteChildren,
-)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ApiInngestRoute: ApiInngestRoute,
   ApiNotificationsRoute: ApiNotificationsRoute,
-  FeedSlugRoute: FeedSlugRouteWithChildren,
+  FeedSlugArticleSlugRoute: FeedSlugArticleSlugRoute,
+  FeedSlugIndexRoute: FeedSlugIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
