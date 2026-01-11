@@ -14,7 +14,7 @@ export interface EventStreamMessage {
  * Heavily inspired by [H3's event stream](https://github.com/h3js/h3/blob/main/src/utils/internal/event-stream.ts#L10)
  */
 export class EventStream {
-	private readonly _request: Request
+	private readonly _keepalive: boolean
 	private readonly _transformStream = new TransformStream()
 	private readonly _writer: WritableStreamDefaultWriter
 	private readonly _encoder = new TextEncoder()
@@ -26,7 +26,7 @@ export class EventStream {
 	private _handled = false
 
 	constructor(request: Request) {
-		this._request = request
+		this._keepalive = request.keepalive || request.headers.get("connection") === "keep-alive"
 		this._writer = this._transformStream.writable.getWriter()
 		const onAbort = () => this.close().catch()
 		request.signal.addEventListener("abort", onAbort)
@@ -168,7 +168,7 @@ export class EventStream {
 			"Transfer-Encoding": "chunked",
 			"x-accel-buffering": "no" // prevent nginx from buffering the response
 		})
-		if (this._request.keepalive || this._request.headers.get("connection") === "keep-alive") {
+		if (this._keepalive) {
 			headers.set("Connection", "keep-alive")
 		}
 		return headers
