@@ -5,6 +5,10 @@ import { NonRetriableError, RetryAfterError } from "inngest"
 import Parser from "rss-parser"
 import { getSSEManager } from "#/sse/sse-manager"
 
+/**
+ * TODO: 
+ * - create a slug field for feeds to use in URLs (should be unique)
+ */
 export const parseFeed = inngest.createFunction(
 	{
 		id: "parse-feed",
