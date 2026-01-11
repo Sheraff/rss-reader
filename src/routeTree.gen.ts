@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as FeedIdRouteImport } from './routes/feed/$id'
+import { Route as ArticleIdRouteImport } from './routes/article/$id'
 import { Route as ApiNotificationsRouteImport } from './routes/api/notifications'
 import { Route as ApiInngestRouteImport } from './routes/api/inngest'
 
@@ -22,6 +23,11 @@ const IndexRoute = IndexRouteImport.update({
 const FeedIdRoute = FeedIdRouteImport.update({
   id: '/feed/$id',
   path: '/feed/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ArticleIdRoute = ArticleIdRouteImport.update({
+  id: '/article/$id',
+  path: '/article/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiNotificationsRoute = ApiNotificationsRouteImport.update({
@@ -39,12 +45,14 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/api/inngest': typeof ApiInngestRoute
   '/api/notifications': typeof ApiNotificationsRoute
+  '/article/$id': typeof ArticleIdRoute
   '/feed/$id': typeof FeedIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/api/inngest': typeof ApiInngestRoute
   '/api/notifications': typeof ApiNotificationsRoute
+  '/article/$id': typeof ArticleIdRoute
   '/feed/$id': typeof FeedIdRoute
 }
 export interface FileRoutesById {
@@ -52,20 +60,33 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/api/inngest': typeof ApiInngestRoute
   '/api/notifications': typeof ApiNotificationsRoute
+  '/article/$id': typeof ArticleIdRoute
   '/feed/$id': typeof FeedIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/api/inngest' | '/api/notifications' | '/feed/$id'
+  fullPaths:
+    | '/'
+    | '/api/inngest'
+    | '/api/notifications'
+    | '/article/$id'
+    | '/feed/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/api/inngest' | '/api/notifications' | '/feed/$id'
-  id: '__root__' | '/' | '/api/inngest' | '/api/notifications' | '/feed/$id'
+  to: '/' | '/api/inngest' | '/api/notifications' | '/article/$id' | '/feed/$id'
+  id:
+    | '__root__'
+    | '/'
+    | '/api/inngest'
+    | '/api/notifications'
+    | '/article/$id'
+    | '/feed/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ApiInngestRoute: typeof ApiInngestRoute
   ApiNotificationsRoute: typeof ApiNotificationsRoute
+  ArticleIdRoute: typeof ArticleIdRoute
   FeedIdRoute: typeof FeedIdRoute
 }
 
@@ -83,6 +104,13 @@ declare module '@tanstack/react-router' {
       path: '/feed/$id'
       fullPath: '/feed/$id'
       preLoaderRoute: typeof FeedIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/article/$id': {
+      id: '/article/$id'
+      path: '/article/$id'
+      fullPath: '/article/$id'
+      preLoaderRoute: typeof ArticleIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/notifications': {
@@ -106,6 +134,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ApiInngestRoute: ApiInngestRoute,
   ApiNotificationsRoute: ApiNotificationsRoute,
+  ArticleIdRoute: ArticleIdRoute,
   FeedIdRoute: FeedIdRoute,
 }
 export const routeTree = rootRouteImport

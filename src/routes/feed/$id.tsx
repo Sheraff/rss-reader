@@ -113,53 +113,30 @@ function FeedPage() {
 					<ul className={styles.articleList}>
 						{articles.map((article) => (
 							<li key={article.id}>
-								{article.url ? (
-									<a
-										href={article.url}
-										target="_blank"
-										rel="noopener noreferrer"
-										className={styles.articleItem}
-									>
-										<div className={styles.articleContent}>
-											<div className={styles.articleInfo}>
-												<h3 className={styles.articleTitle}>{article.title}</h3>
-												{article.summary && (
-													<p className={styles.articleSummary}>
-														{article.summary.substring(0, 200)}
-														{article.summary.length > 200 ? "..." : ""}
-													</p>
+								<Link
+									to="/article/$id"
+									params={{ id: article.id }}
+									className={styles.articleItem}
+								>
+									<div className={styles.articleContent}>
+										<div className={styles.articleInfo}>
+											<h3 className={styles.articleTitle}>{article.title}</h3>
+											{article.summary && (
+												<p className={styles.articleSummary}>
+													{article.summary.substring(0, 200)}
+													{article.summary.length > 200 ? "..." : ""}
+												</p>
+											)}
+											<div className={styles.articleMeta}>
+												{article.author_name && <span>By {article.author_name}</span>}
+												{article.published_at && (
+													<span>{new Date(article.published_at).toLocaleDateString()}</span>
 												)}
-												<div className={styles.articleMeta}>
-													{article.author_name && <span>By {article.author_name}</span>}
-													{article.published_at && (
-														<span>{new Date(article.published_at).toLocaleDateString()}</span>
-													)}
-												</div>
-											</div>
-											<div className={styles.articleArrow}>→</div>
-										</div>
-									</a>
-								) : (
-									<div className={styles.articleItem}>
-										<div className={styles.articleContent}>
-											<div className={styles.articleInfo}>
-												<h3 className={styles.articleTitle}>{article.title}</h3>
-												{article.summary && (
-													<p className={styles.articleSummary}>
-														{article.summary.substring(0, 200)}
-														{article.summary.length > 200 ? "..." : ""}
-													</p>
-												)}
-												<div className={styles.articleMeta}>
-													{article.author_name && <span>By {article.author_name}</span>}
-													{article.published_at && (
-														<span>{new Date(article.published_at).toLocaleDateString()}</span>
-													)}
-												</div>
 											</div>
 										</div>
+										<div className={styles.articleArrow}>→</div>
 									</div>
-								)}
+								</Link>
 							</li>
 						))}
 					</ul>

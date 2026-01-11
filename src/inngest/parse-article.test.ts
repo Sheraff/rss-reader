@@ -208,7 +208,7 @@ describe("parseArticle function", () => {
 	})
 
 	test("throws error when article not found", async () => {
-		const consoleError = vi.spyOn(console, "error").mockImplementation(() => {})
+		const consoleError = vi.spyOn(console, "error").mockImplementation(() => { })
 
 		const { error } = await t.execute({
 			events: [{ name: "article/parse", data: { feedId, articleId: 99999 } }]
@@ -224,7 +224,7 @@ describe("parseArticle function", () => {
 	})
 
 	test("throws error when article has no URL", async () => {
-		const consoleError = vi.spyOn(console, "error").mockImplementation(() => {})
+		const consoleError = vi.spyOn(console, "error").mockImplementation(() => { })
 
 		// Update article to have no URL
 		testDb
@@ -247,7 +247,7 @@ describe("parseArticle function", () => {
 	})
 
 	test("throws error on network failure", async () => {
-		const consoleError = vi.spyOn(console, "error").mockImplementation(() => {})
+		const consoleError = vi.spyOn(console, "error").mockImplementation(() => { })
 
 		// Mock fetch throwing network error
 		global.fetch = vi.fn().mockRejectedValue(new Error("Network error"))
@@ -266,7 +266,7 @@ describe("parseArticle function", () => {
 	})
 
 	test("throws error on HTTP error response", async () => {
-		const consoleError = vi.spyOn(console, "error").mockImplementation(() => {})
+		const consoleError = vi.spyOn(console, "error").mockImplementation(() => { })
 
 		// Mock fetch returning 404
 		global.fetch = vi.fn().mockResolvedValue({
@@ -289,7 +289,7 @@ describe("parseArticle function", () => {
 	})
 
 	test("throws error when Readability fails to parse", async () => {
-		const consoleError = vi.spyOn(console, "error").mockImplementation(() => {})
+		const consoleError = vi.spyOn(console, "error").mockImplementation(() => { })
 
 		// Mock HTML that Readability can't parse
 		const unparsableHtml = "<html><body></body></html>"
@@ -311,5 +311,109 @@ describe("parseArticle function", () => {
 		}
 
 		consoleError.mockRestore()
+	})
+
+	test("converts relative URLs to absolute URLs including srcset", async () => {
+		// Mock HTML with relative URLs in src, href, and srcset attributes
+		const htmlWithRelativeUrls = `
+			<!DOCTYPE html>
+			<html>
+			<head>
+				<title>Test Article</title>
+			</head>
+			<body>
+				<article>
+					<h1>Test Article</h1>
+					<p>Some content with an image:</p>
+					<img 
+						src="/images/photo.jpg" 
+						srcset="/images/photo-240.jpg 240w, /images/photo-480.jpg 480w, /images/photo-800.jpg 800w"
+						alt="Test image"
+					/>
+					<p>And a <a href="/other-article">relative link</a>.</p>
+					<p>More content to make it parseable by Readability.</p>
+					<p>Even more content here.</p>
+				</article>
+			</body>
+			</html>
+		`
+
+		global.fetch = vi.fn().mockResolvedValue({
+			ok: true,
+			status: 200,
+			text: async () => htmlWithRelativeUrls
+		})
+
+		await t.execute({
+			events: [{ name: "article/parse", data: { feedId, articleId } }]
+		})
+
+		const updatedArticle = testDb
+			.prepare<[id: number | bigint], Article>(`
+			SELECT * FROM articles WHERE id = ?
+		`)
+			.get(articleId)!
+
+		expect(updatedArticle.fetch_status).toBe("complete")
+		expect(updatedArticle.content).toBeTruthy()
+
+		// Check that src is converted to absolute URL
+		expect(updatedArticle.content).toContain("https://example.com/images/photo.jpg")
+
+		// Check that all srcset URLs are converted to absolute URLs
+		expect(updatedArticle.content).toContain("https://example.com/images/photo-240.jpg")
+		expect(updatedArticle.content).toContain("https://example.com/images/photo-480.jpg")
+		expect(updatedArticle.content).toContain("https://example.com/images/photo-800.jpg")
+
+		// Check that width descriptors are preserved
+		expect(updatedArticle.content).toContain("240w")
+		expect(updatedArticle.content).toContain("480w")
+		expect(updatedArticle.content).toContain("800w")
+
+		// Check that links are converted
+		expect(updatedArticle.content).toContain("https://example.com/other-article")
+
+		// Should not contain any relative URLs
+		expect(updatedArticle.content).not.toMatch(/src="\//)
+		expect(updatedArticle.content).not.toMatch(/srcset="\//)
+		expect(updatedArticle.content).not.toMatch(/href="\//)
+	})
+
+	test("converts relative URLs to absolute URLs including srcset with real content", async () => {
+		testDb
+			.prepare(`
+			UPDATE articles SET url = ? WHERE id = ?
+		`)
+			.run("https://tkdodo.eu/blog/article", articleId)
+
+		const { default: htmlWithRelativeUrls } = await import('./__mocks__/tkdodo-article.html?raw')
+
+		global.fetch = vi.fn().mockResolvedValue({
+			ok: true,
+			status: 200,
+			text: async () => htmlWithRelativeUrls
+		})
+
+		await t.execute({
+			events: [{ name: "article/parse", data: { feedId, articleId } }]
+		})
+
+		const updatedArticle = testDb
+			.prepare<[id: number | bigint], Article>(`
+			SELECT * FROM articles WHERE id = ?
+		`)
+			.get(articleId)!
+
+		expect(updatedArticle.fetch_status).toBe("complete")
+		expect(updatedArticle.content).toBeTruthy()
+
+		// Should not contain any relative URLs
+		expect(updatedArticle.content).not.toMatch(/\ssrc="\.?\//i)
+		expect(updatedArticle.content).not.toMatch(/\shref="\.?\//i)
+		expect(updatedArticle.content).not.toMatch(/\ssrcset="\.?\//i)
+
+		// We should not inadvertently encode spaces in srcset syntax
+		expect(updatedArticle.content).not.toContain('stack.jpg%20640w')
+
 	})
 })

@@ -5,6 +5,66 @@ import { Readability } from "@mozilla/readability"
 import { RetryAfterError } from "inngest"
 import { parseHTML } from "linkedom"
 import { getSSEManager } from "#/sse/sse-manager"
+import DOMPurify from "dompurify"
+
+/**
+ * Convert relative URLs in HTML content to absolute URLs using the article's URL as base
+ */
+function makeUrlsAbsolute(document: Document, baseUrl: string): Document {
+
+	const urlAttributes = [
+		{ selector: "img", attr: "src" },
+		{ selector: "img", attr: "srcset" },
+		{ selector: "img", attr: "srcSet", },
+		{ selector: "a", attr: "href" },
+		{ selector: "link", attr: "href" },
+		{ selector: "source", attr: "src" },
+		{ selector: "source", attr: "srcset", },
+		{ selector: "source", attr: "srcSet" },
+		{ selector: "video", attr: "src" },
+		{ selector: "audio", attr: "src" },
+		{ selector: "iframe", attr: "src" }
+	]
+
+	for (const { selector, attr } of urlAttributes) {
+		const elements = document.querySelectorAll(selector)
+		for (const element of elements) {
+			const value = element.getAttribute(attr)
+			if (!value) continue
+
+			if (attr.toLowerCase() === "srcset") {
+				// Handle srcset specially (it can have multiple URLs)
+				const srcsetParts = value.split(",").map((part) => {
+					const trimmed = part.trim()
+					const [url, ...rest] = trimmed.split(/\s+/)
+					try {
+						const absoluteUrl = new URL(url, baseUrl).href
+						return [absoluteUrl, ...rest].join(" ")
+					} catch {
+						return trimmed
+					}
+				})
+				element.removeAttribute('srcset')
+				element.removeAttribute('srcSet')
+				element.setAttribute(attr.toLowerCase(), srcsetParts.join(", "))
+			} else {
+				if (value.startsWith("#") || value.startsWith("data:")) {
+					// Skip fragment identifiers and data URLs
+					continue
+				}
+				// Handle regular URL attributes
+				try {
+					const absoluteUrl = new URL(value, baseUrl).href
+					element.setAttribute(attr, absoluteUrl)
+				} catch {
+					// If URL parsing fails, leave it as is
+				}
+			}
+		}
+	}
+
+	return document
+}
 
 export const parseArticle = inngest.createFunction(
 	{
@@ -64,15 +124,28 @@ export const parseArticle = inngest.createFunction(
 
 		// Parse article content with Readability
 		const parsed = await step.run("parse-article-content", () => {
-			const { document } = parseHTML(html)
-			const reader = new Readability(document)
-			const article = reader.parse()
+			const window = parseHTML(html)
+			const reader = new Readability(window.document)
+			const parsed = reader.parse()
 
-			if (!article) {
+			if (!parsed) {
 				throw new Error("Failed to extract article content with Readability")
 			}
 
-			return article
+			// Sanitize the extracted content
+			if (parsed.content) {
+				const purify = DOMPurify(window)
+				parsed.content = purify.sanitize(parsed.content)
+				// Convert relative URLs to absolute URLs in the extracted content
+				{
+					// Parse the content as a full HTML document
+					const { document } = parseHTML(`<!DOCTYPE html><html><head></head><body>${parsed.content}</body></html>`)
+					const absoluteDoc = makeUrlsAbsolute(document, article.url!)
+					parsed.content = absoluteDoc.body.innerHTML
+				}
+			}
+
+			return parsed
 		})
 
 		// Update article in database with extracted content
