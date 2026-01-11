@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useRouter } from "@tanstack/react-router"
+import { createFileRoute, Link } from "@tanstack/react-router"
 import { createServerFn } from "@tanstack/react-start"
 import { getDatabase } from "#/db"
 import type { FeedWithSubscription } from "#/db/types"
@@ -6,7 +6,6 @@ import styles from "./-index.module.css"
 import { getUserId } from "#/sso/getUserId"
 import { inngest } from "#/inngest/inngest"
 import * as v from "valibot"
-import { useState, useCallback } from "react"
 
 /**
  * TODO
@@ -19,7 +18,7 @@ const getUserFeeds = createServerFn({
 	const userId = await getUserId({ signal })
 	const db = getDatabase()
 	return db
-		.prepare<[userId: string], FeedWithSubscription>(`
+		.prepare<[userId: string, userId2: string], FeedWithSubscription>(`
 			SELECT 
 				f.id,
 				f.url,
@@ -31,13 +30,17 @@ const getUserFeeds = createServerFn({
 				f.last_fetched_at,
 				f.last_success_at,
 				s.category,
-				s.created_at as subscribed_at
+				s.created_at as subscribed_at,
+				COUNT(CASE WHEN a.id IS NOT NULL AND COALESCE(ua.is_read, 0) = 0 THEN 1 END) as unread_count
 			FROM feeds f
 			INNER JOIN subscriptions s ON f.id = s.feed_id
+			LEFT JOIN articles a ON f.id = a.feed_id
+			LEFT JOIN user_article ua ON a.id = ua.article_id AND ua.user_id = ?
 			WHERE s.user_id = ?
+			GROUP BY f.id
 			ORDER BY f.title ASC
 		`)
-		.all(userId)
+		.all(userId, userId)
 })
 
 const addFeedSubscription = createServerFn({
@@ -181,7 +184,12 @@ function HomePage() {
 						>
 							{feed.image_url && <img src={feed.image_url} alt="" className={styles.feedImage} />}
 							<div className={styles.feedContent}>
-								<h2 className={styles.feedTitle}>{feed.title || "Untitled Feed"}</h2>
+								<div className={styles.feedTitleRow}>
+									<h2 className={styles.feedTitle}>{feed.title || "Untitled Feed"}</h2>
+									{feed.unread_count > 0 && (
+										<span className={styles.unreadBadge}>{feed.unread_count}</span>
+									)}
+								</div>
 								{feed.description && <p className={styles.feedDescription}>{feed.description}</p>}
 								<div className={styles.feedMeta}>
 									{feed.category && <span className={styles.category}>{feed.category}</span>}

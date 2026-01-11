@@ -141,6 +141,7 @@ export interface FeedWithSubscription {
 	last_success_at: string | null
 	category: string | null
 	subscribed_at: string
+	unread_count: number
 }
 
 /**
