@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS feeds (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   url TEXT NOT NULL UNIQUE,
+  slug TEXT NOT NULL UNIQUE,
   type TEXT NOT NULL DEFAULT 'rss' CHECK (type IN ('rss', 'atom')),
   
   -- Feed metadata (RSS/Atom common fields)
@@ -163,6 +164,7 @@ CREATE INDEX IF NOT EXISTS idx_user_article_article_id ON user_article(article_i
 -- Feeds indexes
 CREATE INDEX IF NOT EXISTS idx_feeds_last_fetched ON feeds(last_fetched_at);
 CREATE INDEX IF NOT EXISTS idx_feeds_is_active ON feeds(is_active);
+CREATE INDEX IF NOT EXISTS idx_feeds_slug ON feeds(slug);
 
 -- Triggers for automatic updated_at timestamps
 

@@ -10,7 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as FeedIdRouteImport } from './routes/feed/$id'
+import { Route as FeedSlugRouteImport } from './routes/feed/$slug'
 import { Route as ArticleIdRouteImport } from './routes/article/$id'
 import { Route as ApiNotificationsRouteImport } from './routes/api/notifications'
 import { Route as ApiInngestRouteImport } from './routes/api/inngest'
@@ -20,9 +20,9 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const FeedIdRoute = FeedIdRouteImport.update({
-  id: '/feed/$id',
-  path: '/feed/$id',
+const FeedSlugRoute = FeedSlugRouteImport.update({
+  id: '/feed/$slug',
+  path: '/feed/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ArticleIdRoute = ArticleIdRouteImport.update({
@@ -46,14 +46,14 @@ export interface FileRoutesByFullPath {
   '/api/inngest': typeof ApiInngestRoute
   '/api/notifications': typeof ApiNotificationsRoute
   '/article/$id': typeof ArticleIdRoute
-  '/feed/$id': typeof FeedIdRoute
+  '/feed/$slug': typeof FeedSlugRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/api/inngest': typeof ApiInngestRoute
   '/api/notifications': typeof ApiNotificationsRoute
   '/article/$id': typeof ArticleIdRoute
-  '/feed/$id': typeof FeedIdRoute
+  '/feed/$slug': typeof FeedSlugRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -61,7 +61,7 @@ export interface FileRoutesById {
   '/api/inngest': typeof ApiInngestRoute
   '/api/notifications': typeof ApiNotificationsRoute
   '/article/$id': typeof ArticleIdRoute
-  '/feed/$id': typeof FeedIdRoute
+  '/feed/$slug': typeof FeedSlugRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -70,16 +70,21 @@ export interface FileRouteTypes {
     | '/api/inngest'
     | '/api/notifications'
     | '/article/$id'
-    | '/feed/$id'
+    | '/feed/$slug'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/api/inngest' | '/api/notifications' | '/article/$id' | '/feed/$id'
+  to:
+    | '/'
+    | '/api/inngest'
+    | '/api/notifications'
+    | '/article/$id'
+    | '/feed/$slug'
   id:
     | '__root__'
     | '/'
     | '/api/inngest'
     | '/api/notifications'
     | '/article/$id'
-    | '/feed/$id'
+    | '/feed/$slug'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -87,7 +92,7 @@ export interface RootRouteChildren {
   ApiInngestRoute: typeof ApiInngestRoute
   ApiNotificationsRoute: typeof ApiNotificationsRoute
   ArticleIdRoute: typeof ArticleIdRoute
-  FeedIdRoute: typeof FeedIdRoute
+  FeedSlugRoute: typeof FeedSlugRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -99,11 +104,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/feed/$id': {
-      id: '/feed/$id'
-      path: '/feed/$id'
-      fullPath: '/feed/$id'
-      preLoaderRoute: typeof FeedIdRouteImport
+    '/feed/$slug': {
+      id: '/feed/$slug'
+      path: '/feed/$slug'
+      fullPath: '/feed/$slug'
+      preLoaderRoute: typeof FeedSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/article/$id': {
@@ -135,7 +140,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiInngestRoute: ApiInngestRoute,
   ApiNotificationsRoute: ApiNotificationsRoute,
   ArticleIdRoute: ArticleIdRoute,
-  FeedIdRoute: FeedIdRoute,
+  FeedSlugRoute: FeedSlugRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

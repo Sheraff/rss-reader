@@ -51,3 +51,5 @@ export function getDatabase(path?: string): Database.Database {
 
 	return db
 }
+
+export { generateUniqueSlug } from "./slug"

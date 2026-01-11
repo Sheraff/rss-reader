@@ -17,8 +17,10 @@ const getArticle = createServerFn({
 
 		// Get article details
 		const article = db
-			.prepare<[articleId: number], Article>(`
-				SELECT * FROM articles WHERE id = ?
+			.prepare<[articleId: number], Article & { feed_slug: string }>(` 
+				SELECT a.*, f.slug as feed_slug FROM articles a
+				INNER JOIN feeds f ON a.feed_id = f.id
+				WHERE a.id = ?
 			`)
 			.get(articleId)
 
@@ -190,7 +192,7 @@ function ArticlePage() {
 		<div className={styles.container}>
 			<nav className={styles.nav}>
 				<div className={styles.navLeft}>
-					<Link to="/feed/$id" params={{ id: article.feed_id }} className={styles.backLink}>
+					<Link to="/feed/$slug" params={{ slug: article.feed_slug }} className={styles.backLink}>
 						← Back to Feed
 					</Link>
 					<span className={isRead ? styles.readStatus : styles.unreadStatus}>

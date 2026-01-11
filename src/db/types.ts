@@ -15,6 +15,7 @@ export interface User {
 export interface Feed {
 	id: number
 	url: string
+	slug: string
 	type: FeedType
 
 	// Feed metadata
@@ -132,6 +133,7 @@ export interface UserArticle {
 export interface FeedWithSubscription {
 	id: number
 	url: string
+	slug: string
 	title: string | null
 	description: string | null
 	image_url: string | null
@@ -154,6 +156,7 @@ export interface UserInsert {
 
 export interface FeedInsert {
 	url: string
+	slug: string
 	type?: FeedType
 	title?: string | null
 	description?: string | null
@@ -228,6 +231,7 @@ export interface UserArticleInsert {
 
 export interface FeedUpdate {
 	url?: string
+	slug?: string
 	type?: FeedType
 	title?: string | null
 	description?: string | null

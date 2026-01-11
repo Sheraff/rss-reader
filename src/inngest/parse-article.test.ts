@@ -63,10 +63,10 @@ describe("parseArticle function", () => {
 		// Insert a test feed
 		const feedResult = testDb
 			.prepare(`
-			INSERT INTO feeds (url, type, is_active)
-			VALUES (?, ?, ?)
+			INSERT INTO feeds (url, slug, type, is_active)
+			VALUES (?, ?, ?, ?)
 		`)
-			.run("https://example.com/feed.xml", "rss", 1)
+			.run("https://example.com/feed.xml", "example-com", "rss", 1)
 		feedId = feedResult.lastInsertRowid
 
 		// Insert a test article

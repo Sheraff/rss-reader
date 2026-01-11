@@ -37,31 +37,31 @@ describe("scheduleFeedUpdates function", () => {
 		// Insert test feeds - some active, some inactive
 		testDb
 			.prepare(`
-			INSERT INTO feeds (url, title, description, is_active, fetch_error_count, ttl)
-			VALUES (?, ?, ?, ?, ?, ?)
+			INSERT INTO feeds (url, slug, title, description, is_active, fetch_error_count, ttl)
+			VALUES (?, ?, ?, ?, ?, ?, ?)
 		`)
-			.run("https://example.com/feed1.xml", "Feed 1", "Description 1", 1, 0, 60)
+			.run("https://example.com/feed1.xml", "feed-1", "Feed 1", "Description 1", 1, 0, 60)
 
 		testDb
 			.prepare(`
-			INSERT INTO feeds (url, title, description, is_active, fetch_error_count, ttl)
-			VALUES (?, ?, ?, ?, ?, ?)
+			INSERT INTO feeds (url, slug, title, description, is_active, fetch_error_count, ttl)
+			VALUES (?, ?, ?, ?, ?, ?, ?)
 		`)
-			.run("https://example.com/feed2.xml", "Feed 2", "Description 2", 1, 0, 30)
+			.run("https://example.com/feed2.xml", "feed-2", "Feed 2", "Description 2", 1, 0, 30)
 
 		testDb
 			.prepare(`
-			INSERT INTO feeds (url, title, description, is_active, fetch_error_count, ttl)
-			VALUES (?, ?, ?, ?, ?, ?)
+			INSERT INTO feeds (url, slug, title, description, is_active, fetch_error_count, ttl)
+			VALUES (?, ?, ?, ?, ?, ?, ?)
 		`)
-			.run("https://example.com/feed3.xml", "Feed 3", "Description 3", 0, 0, 60) // Inactive
+			.run("https://example.com/feed3.xml", "feed-3", "Feed 3", "Description 3", 0, 0, 60) // Inactive
 
 		testDb
 			.prepare(`
-			INSERT INTO feeds (url, title, description, is_active, fetch_error_count, ttl)
-			VALUES (?, ?, ?, ?, ?, ?)
+			INSERT INTO feeds (url, slug, title, description, is_active, fetch_error_count, ttl)
+			VALUES (?, ?, ?, ?, ?, ?, ?)
 		`)
-			.run("https://example.com/feed4.xml", "Feed 4", "Description 4", 1, 0, null)
+			.run("https://example.com/feed4.xml", "feed-4", "Feed 4", "Description 4", 1, 0, null)
 
 		// Execute the cron function with mocked step
 		const { result } = await t.execute({
@@ -89,10 +89,10 @@ describe("scheduleFeedUpdates function", () => {
 		// Insert a single test feed
 		testDb
 			.prepare(`
-			INSERT INTO feeds (url, title, description, is_active, fetch_error_count)
-			VALUES (?, ?, ?, ?, ?)
+			INSERT INTO feeds (url, slug, title, description, is_active, fetch_error_count)
+			VALUES (?, ?, ?, ?, ?, ?)
 		`)
-			.run("https://example.com/feed.xml", "Test Feed", "Description", 1, 0)
+			.run("https://example.com/feed.xml", "test-feed", "Test Feed", "Description", 1, 0)
 
 		// Execute the function with mocked step
 		const { result } = await t.execute({
@@ -116,10 +116,10 @@ describe("scheduleFeedUpdates function", () => {
 		// Insert only inactive feeds
 		testDb
 			.prepare(`
-			INSERT INTO feeds (url, title, description, is_active, fetch_error_count)
-			VALUES (?, ?, ?, ?, ?)
+			INSERT INTO feeds (url, slug, title, description, is_active, fetch_error_count)
+			VALUES (?, ?, ?, ?, ?, ?)
 		`)
-			.run("https://example.com/feed.xml", "Inactive Feed", "Description", 0, 0)
+			.run("https://example.com/feed.xml", "inactive-feed", "Inactive Feed", "Description", 0, 0)
 
 		// Execute the function
 		const { result } = await t.execute()
@@ -152,26 +152,26 @@ describe("scheduleFeedUpdates function", () => {
 		// Recently fetched feed with long TTL (not yet expired) - should NOT be scheduled
 		testDb
 			.prepare(`
-			INSERT INTO feeds (url, title, description, is_active, fetch_error_count, ttl, last_fetched_at)
-			VALUES (?, ?, ?, ?, ?, ?, ?)
+			INSERT INTO feeds (url, slug, title, description, is_active, fetch_error_count, ttl, last_fetched_at)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 		`)
-			.run("https://example.com/feed1.xml", "Feed 1", "Description 1", 1, 0, 120, now)
+			.run("https://example.com/feed1.xml", "feed-1", "Feed 1", "Description 1", 1, 0, 120, now)
 
 		// Old fetch with expired TTL - should be scheduled
 		testDb
 			.prepare(`
-			INSERT INTO feeds (url, title, description, is_active, fetch_error_count, ttl, last_fetched_at)
-			VALUES (?, ?, ?, ?, ?, ?, ?)
+			INSERT INTO feeds (url, slug, title, description, is_active, fetch_error_count, ttl, last_fetched_at)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 		`)
-			.run("https://example.com/feed2.xml", "Feed 2", "Description 2", 1, 0, 30, hourAgo)
+			.run("https://example.com/feed2.xml", "feed-2", "Feed 2", "Description 2", 1, 0, 30, hourAgo)
 
 		// Never fetched - should be scheduled
 		testDb
 			.prepare(`
-			INSERT INTO feeds (url, title, description, is_active, fetch_error_count)
-			VALUES (?, ?, ?, ?, ?)
+			INSERT INTO feeds (url, slug, title, description, is_active, fetch_error_count)
+			VALUES (?, ?, ?, ?, ?, ?)
 		`)
-			.run("https://example.com/feed3.xml", "Feed 3", "Description 3", 1, 0)
+			.run("https://example.com/feed3.xml", "feed-3", "Feed 3", "Description 3", 1, 0)
 
 		// Execute the function with mocked step
 		const { result } = await t.execute({

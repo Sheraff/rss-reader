@@ -1,4 +1,5 @@
 import { getDatabase } from "#/db"
+import { generateUniqueSlug } from "#/db/slug"
 import type { Feed } from "#/db/types"
 import { inngest } from "#/inngest/inngest"
 import { NonRetriableError, RetryAfterError } from "inngest"
@@ -106,8 +107,13 @@ export const parseFeed = inngest.createFunction(
 		// Update feed metadata
 		await step.run("update-feed-metadata", () => {
 			const db = getDatabase()
+
+			// Generate new slug if title is being set for the first time or has changed
+			const newSlug = generateUniqueSlug(db, parsedFeed.title, feed.url)
+
 			db.prepare<
 				[
+					slug: string,
 					title: string | null,
 					description: string | null,
 					link: string | null,
@@ -123,6 +129,7 @@ export const parseFeed = inngest.createFunction(
 			>(`
 				UPDATE feeds
 				SET 
+					slug = ?,
 					title = ?,
 					description = ?,
 					link = ?,
@@ -139,6 +146,7 @@ export const parseFeed = inngest.createFunction(
 					fetch_error_message = NULL
 				WHERE id = ?
 			`).run(
+				newSlug,
 				parsedFeed.title ?? null,
 				parsedFeed.description ?? null,
 				parsedFeed.link ?? null,

@@ -1,4 +1,5 @@
 import { getDatabase } from "#/db"
+import { generateUniqueSlug } from "#/db/slug"
 import { inngest } from "#/inngest/inngest"
 import { NonRetriableError, RetryAfterError } from "inngest"
 import Parser from "rss-parser"
@@ -86,13 +87,15 @@ export const addFeed = inngest.createFunction(
 		if (rssParseResult.isValid) {
 			const feedId = await step.run("create-feed-from-rss", () => {
 				const db = getDatabase()
+				const slug = generateUniqueSlug(db, rssParseResult.parsed.title, feedUrl)
 				db
 					.prepare(`
-						INSERT OR IGNORE INTO feeds (url, type, title, description, link)
-						VALUES (?, ?, ?, ?, ?)
+						INSERT OR IGNORE INTO feeds (url, slug, type, title, description, link)
+						VALUES (?, ?, ?, ?, ?, ?)
 					`)
 					.run(
 						feedUrl,
+						slug,
 						rssParseResult.parsed.feedUrl || rssParseResult.parsed.link ? "rss" : "atom",
 						rssParseResult.parsed.title || null,
 						rssParseResult.parsed.description || null,
@@ -229,8 +232,8 @@ export const addFeed = inngest.createFunction(
 				if (response.ok) {
 					const text = await response.text()
 					try {
-						await parser.parseString(text)
-						return url
+						const { title } = await parser.parseString(text)
+						return { url, title }
 					} catch {
 						// Invalid feed, skip
 					}
@@ -263,7 +266,7 @@ export const addFeed = inngest.createFunction(
 
 		if (validatedFeeds.length === 1) {
 			// Single feed found, create it automatically
-			const discoveredUrl = validatedFeeds[0]
+			const discoveredFeed = validatedFeeds[0]
 
 			// Check if this URL already exists
 			const existingDiscoveredFeed = await step.run("check-discovered-feed-exists", () => {
@@ -272,7 +275,7 @@ export const addFeed = inngest.createFunction(
 					.prepare<[url: string], { id: number }>(`
 						SELECT id FROM feeds WHERE url = ?
 					`)
-					.get(discoveredUrl)
+					.get(discoveredFeed.url)
 			})
 
 			if (existingDiscoveredFeed) {
@@ -287,7 +290,7 @@ export const addFeed = inngest.createFunction(
 				await step.run("notify-feed-exists-discovered", async () => {
 					await getSSEManager().notifyUser(requestedBy, "feed.added", {
 						feedId: existingDiscoveredFeed.id,
-						feedUrl: discoveredUrl,
+						feedUrl: discoveredFeed.url,
 						pendingId
 					})
 				})
@@ -297,12 +300,13 @@ export const addFeed = inngest.createFunction(
 
 			const feedId = await step.run("create-discovered-feed", () => {
 				const db = getDatabase()
+				const slug = generateUniqueSlug(db, discoveredFeed.title, discoveredFeed.url)
 				db
-					.prepare(`INSERT OR IGNORE INTO feeds (url) VALUES (?)`)
-					.run(discoveredUrl)
+					.prepare(`INSERT OR IGNORE INTO feeds (url, slug) VALUES (?, ?)`)
+					.run(discoveredFeed.url, slug)
 
 
-				const result = db.prepare<[url: string], { id: number }>(`SELECT id FROM feeds WHERE url = ?`).get(discoveredUrl)
+				const result = db.prepare<[url: string], { id: number }>(`SELECT id FROM feeds WHERE url = ?`).get(discoveredFeed.url)
 				if (!result) throw new Error("Failed to create discovered feed")
 				const feedId = result.id
 
@@ -317,7 +321,7 @@ export const addFeed = inngest.createFunction(
 			await step.run("notify-discovered-feed-created", async () => {
 				await getSSEManager().notifyUser(requestedBy, "feed.added", {
 					feedId,
-					feedUrl: discoveredUrl,
+					feedUrl: discoveredFeed.url,
 					pendingId
 				})
 			})
@@ -330,6 +334,8 @@ export const addFeed = inngest.createFunction(
 			return { feedId, created: true, discovered: true }
 		}
 
+		const validatedFeedUrls = validatedFeeds.map((f) => f.url)
+
 		// Multiple feeds found, let user choose
 		await step.run("mark-ambiguous", () => {
 			const db = getDatabase()
@@ -337,17 +343,17 @@ export const addFeed = inngest.createFunction(
 				UPDATE pending_feeds
 				SET status = 'ambiguous', candidate_urls = ?
 				WHERE id = ?
-			`).run(JSON.stringify(validatedFeeds), pendingId)
+			`).run(JSON.stringify(validatedFeedUrls), pendingId)
 		})
 
 		await step.run("notify-ambiguous", async () => {
 			await getSSEManager().notifyUser(requestedBy, "feed.add.ambiguous", {
-				candidateUrls: validatedFeeds,
+				candidateUrls: validatedFeedUrls,
 				originalUrl: feedUrl,
 				pendingId
 			})
 		})
 
-		return { ambiguous: true, candidateUrls: validatedFeeds }
+		return { ambiguous: true, candidateUrls: validatedFeedUrls }
 	}
 )

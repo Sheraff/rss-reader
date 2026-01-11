@@ -5,37 +5,37 @@ import type { Article, Feed } from "#/db/types"
 import { getUserId } from "#/sso/getUserId"
 import { inngest } from "#/inngest/inngest"
 import * as v from "valibot"
-import styles from "./-$id.module.css"
+import styles from "./-$slug.module.css"
 import { useEffect, useRef, useCallback, useState, useMemo } from "react"
 
 const getFeedArticles = createServerFn({
 	method: "GET"
 })
-	.inputValidator(v.number())
-	.handler(async ({ data: feedId, signal }) => {
+	.inputValidator(v.string())
+	.handler(async ({ data: slug, signal }) => {
 		const userId = await getUserId({ signal })
 		const db = getDatabase()
 
-		// First, verify the user is subscribed to this feed
+		// Get feed details by slug
+		const feed = db
+			.prepare<[slug: string], Feed>(`
+				SELECT * FROM feeds WHERE slug = ?
+			`)
+			.get(slug)
+
+		if (!feed) {
+			throw notFound()
+		}
+
+		// Verify the user is subscribed to this feed
 		const subscription = db
 			.prepare<[userId: string, feedId: number], { feed_id: number }>(`
 				SELECT feed_id FROM subscriptions 
 				WHERE user_id = ? AND feed_id = ?
 			`)
-			.get(userId, feedId)
+			.get(userId, feed.id)
 
 		if (!subscription) {
-			throw notFound()
-		}
-
-		// Get feed details
-		const feed = db
-			.prepare<[feedId: number], Feed>(`
-				SELECT * FROM feeds WHERE id = ?
-			`)
-			.get(feedId)
-
-		if (!feed) {
 			throw notFound()
 		}
 
@@ -61,7 +61,7 @@ const getFeedArticles = createServerFn({
 				ORDER BY a.published_at DESC
 			`
 			)
-			.all(userId, feedId)
+			.all(userId, feed.id)
 
 		return { feed, articles }
 	})
@@ -119,26 +119,10 @@ const parseArticle = createServerFn({
 		return { success: true, message: "Article already parsed" }
 	})
 
-export const Route = createFileRoute("/feed/$id")({
+export const Route = createFileRoute("/feed/$slug")({
 	component: FeedPage,
-	params: {
-		parse: (p) =>
-			v.parse(
-				v.object({
-					id: v.union([
-						v.number(),
-						v.pipe(
-							v.string(),
-							v.transform((val) => parseInt(val, 10)),
-							v.number()
-						)
-					])
-				}),
-				p
-			)
-	},
 	loader: ({ abortController, params }) =>
-		getFeedArticles({ data: params.id, signal: abortController.signal })
+		getFeedArticles({ data: params.slug, signal: abortController.signal })
 })
 
 function FeedPage() {

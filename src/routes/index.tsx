@@ -22,6 +22,7 @@ const getUserFeeds = createServerFn({
 			SELECT 
 				f.id,
 				f.url,
+				f.slug,
 				f.title,
 				f.description,
 				f.image_url,
@@ -178,8 +179,8 @@ function HomePage() {
 				{feeds.map((feed) => (
 					<li key={feed.id} className={styles.feedItem}>
 						<Link
-							to="/feed/$id"
-							params={{ id: feed.id }}
+							to="/feed/$slug"
+							params={{ slug: feed.slug }}
 							style={{ display: "flex", gap: "1rem", textDecoration: "none", color: "inherit" }}
 						>
 							{feed.image_url && <img src={feed.image_url} alt="" className={styles.feedImage} />}

@@ -62,10 +62,10 @@ describe("parseFeed function", () => {
 		// Insert a test feed
 		const result = testDb
 			.prepare(`
-			INSERT INTO feeds (url, type, is_active)
-			VALUES (?, ?, ?)
+			INSERT INTO feeds (url, slug, type, is_active)
+			VALUES (?, ?, ?, ?)
 		`)
-			.run("https://example.com/feed.xml", "rss", 1)
+			.run("https://example.com/feed.xml", "example-com", "rss", 1)
 
 		feedId = result.lastInsertRowid
 
@@ -253,7 +253,7 @@ describe("parseFeed function", () => {
 	})
 
 	test("throws error when feed not found", async () => {
-		const consoleError = vi.spyOn(console, "error").mockImplementation(() => {})
+		const consoleError = vi.spyOn(console, "error").mockImplementation(() => { })
 
 		const { error } = await t.execute({
 			events: [{ name: "feed/parse.requested", data: { feedId: 99999 } }]
@@ -269,7 +269,7 @@ describe("parseFeed function", () => {
 	})
 
 	test("throws error when feed is not active", async () => {
-		const consoleError = vi.spyOn(console, "error").mockImplementation(() => {})
+		const consoleError = vi.spyOn(console, "error").mockImplementation(() => { })
 
 		// Set feed to inactive
 		testDb
@@ -292,7 +292,7 @@ describe("parseFeed function", () => {
 	})
 
 	test("throws error on network failure", async () => {
-		const consoleError = vi.spyOn(console, "error").mockImplementation(() => {})
+		const consoleError = vi.spyOn(console, "error").mockImplementation(() => { })
 
 		// Mock fetch throwing network error
 		global.fetch = vi.fn().mockRejectedValue(new Error("Network error"))
@@ -311,7 +311,7 @@ describe("parseFeed function", () => {
 	})
 
 	test("throws error on HTTP error response", async () => {
-		const consoleError = vi.spyOn(console, "error").mockImplementation(() => {})
+		const consoleError = vi.spyOn(console, "error").mockImplementation(() => { })
 
 		// Mock fetch returning 404
 		global.fetch = vi.fn().mockResolvedValue({

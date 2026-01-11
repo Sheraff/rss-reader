@@ -113,7 +113,7 @@ export function Notifications() {
 			'article.parsed',
 			(event) => {
 				const data = event.detail
-				router.invalidate({ filter: (r) => r.routeId === `/feed/$id` && r.params.id === data.feedId })
+				router.invalidate({ filter: (r) => r.routeId === `/feed/$slug` })
 				router.invalidate({ filter: (r) => r.routeId === `/article/$id` && r.params.id === data.articleId })
 			},
 			{ signal }
