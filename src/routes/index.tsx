@@ -6,6 +6,7 @@ import styles from "./-index.module.css"
 import { getUserId } from "#/sso/getUserId"
 import { inngest } from "#/inngest/inngest"
 import * as v from "valibot"
+import { useState, useCallback } from "react"
 
 /**
  * TODO
@@ -39,20 +40,6 @@ const getUserFeeds = createServerFn({
 		.all(userId)
 })
 
-/**
- * We need to change this server function: adding a feed should itself be an inngest function because there is a lot to do.
- * 1. check if URL is already registered as a feed
- *   1.1 if so, just return the feed id
- * 2. check if URL actually responds anything
- * 3. check if what it responds is a valid RSS feed
- *   3.1 if so, then create feed row
- *   3.2 then send event for feed parse
- *   3.3 return the feed id
- * 4. if it's not a valid RSS feed, search the HTML for an RSS feed URL. For each found, filter out those that do not respond with a valid RSS feed
- *   4.1 if found a single one, loop back to step 1 with that
- *   4.2 if found multiple, return a list of URLs
- *   4.3 if found none, error out
- */
 const addFeedSubscription = createServerFn({
 	method: "POST"
 })
@@ -62,48 +49,37 @@ const addFeedSubscription = createServerFn({
 		})
 	)
 	.handler(async ({ data, signal }) => {
-		// 1. Get user ID
 		const userId = await getUserId({ signal })
 		const db = getDatabase()
 
-		// 2. Create user in DB if it doesn't exist
+		// Create user in DB if it doesn't exist
 		db.prepare(`
 			INSERT OR IGNORE INTO users (id) VALUES (?)
 		`).run(userId)
 
-		// 3. Check if feed exists, create if not
-		let feed = db
-			.prepare<[url: string], { id: number }>(`
-				SELECT id FROM feeds WHERE url = ?
+		// Create pending feed record
+		const result = db
+			.prepare(`
+				INSERT INTO pending_feeds (user_id, original_url, status)
+				VALUES (?, ?, 'pending')
 			`)
-			.get(data.feedUrl)
+			.run(userId, data.feedUrl)
 
-		const feedWasCreated = !feed
+		const pendingId = result.lastInsertRowid
 
-		if (!feed) {
-			const result = db
-				.prepare(`
-					INSERT INTO feeds (url) VALUES (?)
-				`)
-				.run(data.feedUrl)
-			feed = { id: Number(result.lastInsertRowid) }
-		}
+		// Trigger Inngest function to validate and add feed
+		await inngest.send({
+			name: "feed/add.requested",
+			data: {
+				feedUrl: data.feedUrl,
+				requestedBy: userId,
+				pendingId
+			}
+		})
 
-		// 4. Add feed to user's subscriptions (if not already subscribed)
-		db.prepare(`
-			INSERT OR IGNORE INTO subscriptions (user_id, feed_id) VALUES (?, ?)
-		`).run(userId, feed.id)
-
-		// 5. Call inngest.send to fetch that feed (if it was just created)
-		if (feedWasCreated) {
-			await inngest.send({
-				name: "feed/parse.requested",
-				data: { feedId: feed.id }
-			})
-		}
-
-		return { success: true, feedId: feed.id }
+		return { pending: true, pendingId }
 	})
+
 
 export const Route = createFileRoute("/")({
 	component: HomePage,
@@ -112,7 +88,6 @@ export const Route = createFileRoute("/")({
 
 function HomePage() {
 	const feeds = Route.useLoaderData()
-	const router = useRouter()
 
 	const handleAddFeed = async (e: React.FormEvent<HTMLFormElement>) => {
 		e.preventDefault()
@@ -125,20 +100,10 @@ function HomePage() {
 			return
 		}
 
-		try {
-			await addFeedSubscription({ data: { feedUrl } })
-			// Close the dialog
-			const dialog = form.closest<HTMLDialogElement>("dialog")
-			dialog?.close()
-			// Reset form
-			form.reset()
-			router.invalidate({ filter: (r) => r.routeId === Route.id })
-			// // Refresh the page to show new feed
-			// window.location.reload()
-		} catch (error) {
-			console.error("Failed to add feed:", error)
-			alert("Failed to add feed. Please check the URL and try again.")
-		}
+		await addFeedSubscription({ data: { feedUrl } })
+		form.reset()
+		const dialog = form.closest<HTMLDialogElement>("dialog")
+		dialog?.close()
 	}
 
 	if (feeds.length === 0) {
@@ -235,10 +200,15 @@ function HomePage() {
 			<dialog id="add-feed-dialog" className={styles.dialog}>
 				<form method="dialog" className={styles.dialogHeader}>
 					<h2>Add New Feed</h2>
-					<button type="submit" className={styles.closeButton} aria-label="Close">
+					<button
+						type="submit"
+						className={styles.closeButton}
+						aria-label="Close"
+					>
 						×
 					</button>
 				</form>
+
 				<form onSubmit={handleAddFeed} className={styles.dialogContent}>
 					<label htmlFor="feedUrl" className={styles.label}>
 						Feed URL
@@ -252,7 +222,11 @@ function HomePage() {
 						required
 					/>
 					<div className={styles.dialogActions}>
-						<button type="button" formMethod="dialog" className={styles.cancelButton}>
+						<button
+							type="button"
+							formMethod="dialog"
+							className={styles.cancelButton}
+						>
 							Cancel
 						</button>
 						<button type="submit" className={styles.submitButton}>

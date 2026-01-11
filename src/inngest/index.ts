@@ -2,6 +2,7 @@ import { type InngestFunction } from "inngest"
 import { parseFeed } from "#/inngest/parse-feed"
 import { parseArticle } from "#/inngest/parse-article"
 import { scheduleFeedUpdates } from "#/inngest/schedule-feed-updates"
+import { addFeed } from "#/inngest/add-feed"
 import { inngest } from "#/inngest/inngest"
 
 const helloWorld = inngest.createFunction(
@@ -28,5 +29,6 @@ export const functions = [
 	goodbyeWorld,
 	parseFeed,
 	parseArticle,
-	scheduleFeedUpdates
+	scheduleFeedUpdates,
+	addFeed
 ] satisfies Array<InngestFunction<any, any, any>>

@@ -1,5 +1,6 @@
 import * as v from "valibot"
 import type { EventStream } from "#/sse/lib/event-stream"
+import { serialize } from "seroval"
 
 interface UserConnection {
 	stream: EventStream
@@ -85,7 +86,7 @@ export function createSseServer<Schemas extends Record<string, v.BaseSchema<any,
 			}
 
 			try {
-				await connection.stream.push({ event, data: JSON.stringify(parsed.output) })
+				await connection.stream.push({ event, data: serialize(parsed.output) })
 				console.log(`[SSE] Sent ${event} to user ${userId}`)
 				return true
 			} catch (error) {
@@ -109,7 +110,7 @@ export function createSseServer<Schemas extends Record<string, v.BaseSchema<any,
 			}
 
 			let sent = 0
-			const string = JSON.stringify(parsed.output)
+			const string = serialize(parsed.output)
 			for (const [userId, connection] of connections) {
 				try {
 					await connection.stream.push({ event, data: string })

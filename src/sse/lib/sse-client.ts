@@ -1,3 +1,4 @@
+import { deserialize } from "seroval"
 import * as v from "valibot"
 
 /**
@@ -96,7 +97,7 @@ export function createSseClient<Schemas extends Record<string, v.BaseSchema<any,
 		for (const eventName in schemas) {
 			const name = eventName as keyof Schemas & string
 			const schema = schemas[name]
-			const parser = (data: unknown) => v.safeParse(v.pipe(v.string(), v.parseJson(), schema), data)
+			const parser = (data: unknown) => v.safeParse(v.pipe(v.string(), v.transform(deserialize), schema), data)
 			eventSource.addEventListener(
 				eventName,
 				(event) => {

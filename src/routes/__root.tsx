@@ -3,7 +3,7 @@ import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools"
 import { TanStackDevtools } from "@tanstack/react-devtools"
 
 import appCss from "../styles.css?raw"
-import { useNotifications } from "#/sse/useNotifications"
+import { Notifications } from "#/routes/-notifications"
 
 export const Route = createRootRoute({
 	head: () => ({
@@ -24,7 +24,6 @@ export const Route = createRootRoute({
 })
 
 function RootDocument({ children }: { children: React.ReactNode }) {
-	useNotifications()
 	return (
 		<html lang="en">
 			<head>
@@ -33,6 +32,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 			</head>
 			<body>
 				{children}
+				<Notifications />
 				<TanStackDevtools
 					config={{
 						position: "bottom-right"

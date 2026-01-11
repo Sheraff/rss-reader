@@ -14,7 +14,28 @@ const articleParsedSchema = v.object({
 	contentLength: v.number()
 })
 
+const feedAddedSchema = v.object({
+	feedId: v.number(),
+	feedUrl: v.string(),
+	pendingId: v.union([v.number(), v.bigint()])
+})
+
+const feedAddAmbiguousSchema = v.object({
+	candidateUrls: v.array(v.string()),
+	originalUrl: v.string(),
+	pendingId: v.union([v.number(), v.bigint()])
+})
+
+const feedAddFailedSchema = v.object({
+	error: v.string(),
+	originalUrl: v.string(),
+	pendingId: v.union([v.number(), v.bigint()])
+})
+
 export const schemas = {
 	"feed.parsed": feedParsedSchema,
-	"article.parsed": articleParsedSchema
+	"article.parsed": articleParsedSchema,
+	"feed.added": feedAddedSchema,
+	"feed.add.ambiguous": feedAddAmbiguousSchema,
+	"feed.add.failed": feedAddFailedSchema
 }

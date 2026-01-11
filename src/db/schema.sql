@@ -194,3 +194,31 @@ BEGIN
   UPDATE user_article SET updated_at = CURRENT_TIMESTAMP 
   WHERE user_id = OLD.user_id AND article_id = OLD.article_id;
 END;
+
+-- Pending feeds table
+-- Tracks async feed validation/creation requests
+CREATE TABLE IF NOT EXISTS pending_feeds (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id TEXT NOT NULL,
+  original_url TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'completed', 'failed', 'ambiguous')),
+  result_feed_id INTEGER,
+  candidate_urls JSON, -- JSON array of discovered feed URLs
+  error_message TEXT,
+  
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (result_feed_id) REFERENCES feeds(id) ON DELETE SET NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_pending_feeds_user_id ON pending_feeds(user_id);
+CREATE INDEX IF NOT EXISTS idx_pending_feeds_status ON pending_feeds(status);
+
+CREATE TRIGGER IF NOT EXISTS update_pending_feeds_timestamp
+AFTER UPDATE ON pending_feeds
+FOR EACH ROW
+BEGIN
+  UPDATE pending_feeds SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
+END;

@@ -11,6 +11,11 @@ const schemas = new EventSchemas().fromSchema({
 	"feed/parse.requested": v.object({
 		feedId: v.number()
 	}),
+	"feed/add.requested": v.object({
+		feedUrl: v.string(),
+		requestedBy: v.string(),
+		pendingId: v.union([v.number(), v.bigint()])
+	}),
 	"article/parse": v.object({
 		feedId: v.number(),
 		articleId: v.number()
