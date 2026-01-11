@@ -72,6 +72,7 @@ export function createSseClient<Schemas extends Record<string, v.BaseSchema<any,
 
 		eventSource.onmessage = (event) => {
 			if (event.data === 'ping') return
+			// @ts-expect-error -- okay
 			target.dispatchEvent(new CustomEvent("message", { detail: event.data }))
 		}
 
