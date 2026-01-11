@@ -3,8 +3,10 @@ import { createServerFn } from "@tanstack/react-start"
 import { getDatabase } from "#/db"
 import type { Article, Feed } from "#/db/types"
 import { getUserId } from "#/sso/getUserId"
+import { inngest } from "#/inngest/inngest"
 import * as v from "valibot"
 import styles from "./-$id.module.css"
+import { useEffect, useRef, useCallback } from "react"
 
 const getFeedArticles = createServerFn({
 	method: "GET"
@@ -49,6 +51,59 @@ const getFeedArticles = createServerFn({
 		return { feed, articles }
 	})
 
+const parseArticle = createServerFn({
+	method: "POST"
+})
+	.inputValidator(v.number())
+	.handler(async ({ data: articleId, signal }) => {
+		const userId = await getUserId({ signal })
+		const db = getDatabase()
+
+		// Get the article and verify user has access to it
+		const article = db
+			.prepare<[articleId: number], Article & { feed_id: number }>(
+				`
+				SELECT a.*, a.feed_id
+				FROM articles a
+				WHERE a.id = ?
+			`
+			)
+			.get(articleId)
+
+		if (!article) {
+			throw new Error("Article not found")
+		}
+
+		// Verify user is subscribed to the article's feed
+		const subscription = db
+			.prepare<[userId: string, feedId: number], { feed_id: number }>(
+				`
+				SELECT feed_id FROM subscriptions 
+				WHERE user_id = ? AND feed_id = ?
+			`
+			)
+			.get(userId, article.feed_id)
+
+		if (!subscription) {
+			throw new Error("Access denied")
+		}
+
+		// Only trigger parsing if not already parsed (check fetch_status)
+		if (article.fetch_status === "none" || article.fetch_status === "failed") {
+			await inngest.send({
+				name: "article/parse",
+				data: {
+					feedId: article.feed_id,
+					articleId
+				}
+			})
+
+			return { success: true, message: "Article parsing triggered" }
+		}
+
+		return { success: true, message: "Article already parsed" }
+	})
+
 export const Route = createFileRoute("/feed/$id")({
 	component: FeedPage,
 	params: {
@@ -73,6 +128,50 @@ export const Route = createFileRoute("/feed/$id")({
 
 function FeedPage() {
 	const { feed, articles } = Route.useLoaderData()
+	const parsedArticles = useRef<Set<number> | null>(null)
+
+	// Trigger article parsing when it comes into view
+	const triggerArticleParsing = useCallback(async (articleId: number) => {
+		if (!parsedArticles.current) {
+			parsedArticles.current = new Set<number>()
+		}
+		if (parsedArticles.current.has(articleId)) {
+			return
+		}
+
+		parsedArticles.current.add(articleId)
+
+		try {
+			await parseArticle({ data: articleId })
+		} catch (error) {
+			console.error("Failed to trigger article parsing:", error)
+			// Remove from set so it can be retried
+			parsedArticles.current.delete(articleId)
+		}
+	}, [])
+
+	// Set up intersection observer for lazy parsing
+	useEffect(() => {
+		const observer = new IntersectionObserver(
+			(entries) => {
+				entries.forEach((entry) => {
+					if (entry.isIntersecting) {
+						const articleId = parseInt(entry.target.getAttribute("data-article-id")!, 10)
+						triggerArticleParsing(articleId)
+					}
+				})
+			},
+			{
+				rootMargin: "200px" // Start parsing 200px before article is visible
+			}
+		)
+
+		// Observe all article items
+		const articleElements = document.querySelectorAll("[data-article-id]")
+		articleElements.forEach((el) => observer.observe(el))
+
+		return () => observer.disconnect()
+	}, [articles, triggerArticleParsing])
 
 	return (
 		<div className={styles.container}>
@@ -112,7 +211,7 @@ function FeedPage() {
 					<h2 className={styles.articlesHeader}>Articles ({articles.length})</h2>
 					<ul className={styles.articleList}>
 						{articles.map((article) => (
-							<li key={article.id}>
+							<li key={article.id} data-article-id={article.id}>
 								<Link
 									to="/article/$id"
 									params={{ id: article.id }}

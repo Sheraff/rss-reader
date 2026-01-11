@@ -109,6 +109,16 @@ export function Notifications() {
 			{ signal }
 		)
 
+		sseClient.addEventListener(
+			'article.parsed',
+			(event) => {
+				const data = event.detail
+				router.invalidate({ filter: (r) => r.routeId === `/feed/$id` && r.params.id === data.feedId })
+				router.invalidate({ filter: (r) => r.routeId === `/article/$id` && r.params.id === data.articleId })
+			},
+			{ signal }
+		)
+
 		return () => {
 			console.log("[SSE] Disconnecting...")
 			controller.abort()

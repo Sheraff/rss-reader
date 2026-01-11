@@ -216,11 +216,27 @@ export const parseFeed = inngest.createFunction(
 			return newArticleIds
 		})
 
-		// Fan out to parse individual articles
+		// Fan out to parse individual articles (only the 20 most recent)
 		if (newArticleIds.length > 0) {
+			// Query DB to get the 20 most recent articles by published_at
+			// Cannot rely on insertion order as RSS feeds may not be chronologically sorted
+			const articlesToParseImmediately = await step.run("get-recent-articles", () => {
+				const db = getDatabase()
+				return db
+					.prepare<[feedId: number], { id: number }>(`
+						SELECT id 
+						FROM articles 
+						WHERE feed_id = ? 
+						ORDER BY published_at DESC 
+						LIMIT 20
+					`)
+					.all(feedId)
+					.map((row) => row.id)
+			})
+
 			await step.sendEvent(
 				"fan-out-parse-articles",
-				newArticleIds.map((articleId) => ({
+				articlesToParseImmediately.map((articleId) => ({
 					name: "article/parse",
 					data: {
 						feedId,
