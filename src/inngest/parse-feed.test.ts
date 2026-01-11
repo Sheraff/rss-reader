@@ -207,10 +207,10 @@ describe("parseFeed function", () => {
 		// Insert an article first
 		testDb
 			.prepare(`
-			INSERT INTO articles (feed_id, guid, title)
-			VALUES (?, ?, ?)
+			INSERT INTO articles (feed_id, guid, title, slug)
+			VALUES (?, ?, ?, ?)
 		`)
-			.run(feedId, "article-1", "Existing Article")
+			.run(feedId, "article-1", "Existing Article", "existing-article")
 
 		// Mock fetch
 		global.fetch = vi.fn().mockResolvedValue({

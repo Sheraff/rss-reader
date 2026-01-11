@@ -5,7 +5,7 @@ import type { Article, Feed } from "#/db/types"
 import { getUserId } from "#/sso/getUserId"
 import { inngest } from "#/inngest/inngest"
 import * as v from "valibot"
-import styles from "./-$slug.module.css"
+import styles from "./-$slug.index.module.css"
 import { useEffect, useRef, useCallback, useState, useMemo } from "react"
 
 const getFeedArticles = createServerFn({
@@ -119,7 +119,7 @@ const parseArticle = createServerFn({
 		return { success: true, message: "Article already parsed" }
 	})
 
-export const Route = createFileRoute("/feed/$slug")({
+export const Route = createFileRoute("/feed/$slug/")({
 	component: FeedPage,
 	loader: ({ abortController, params }) =>
 		getFeedArticles({ data: params.slug, signal: abortController.signal })
@@ -259,8 +259,8 @@ function FeedPage() {
 						{filteredArticles.map((article) => (
 							<li key={article.id} data-article-id={article.id}>
 								<Link
-									to="/feed/$feedSlug/$articleSlug"
-									params={{ feedSlug: feed.slug, articleSlug: article.slug }}
+									to="/feed/$slug/$articleSlug"
+									params={{ slug: feed.slug, articleSlug: article.slug }}
 									className={styles.articleItem}
 								>
 									<div className={styles.articleContent}>

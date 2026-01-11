@@ -72,14 +72,15 @@ describe("parseArticle function", () => {
 		// Insert a test article
 		const articleResult = testDb
 			.prepare(`
-			INSERT INTO articles (feed_id, guid, title, url, content, fetch_status)
-			VALUES (?, ?, ?, ?, ?, ?)
+			INSERT INTO articles (feed_id, guid, title, url, slug, content, fetch_status)
+			VALUES (?, ?, ?, ?, ?, ?, ?)
 		`)
 			.run(
 				feedId,
 				"article-1",
 				"Test Article",
 				"https://example.com/article",
+				"test-article",
 				"<p>Short RSS content</p>",
 				"none"
 			)

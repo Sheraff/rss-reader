@@ -10,6 +10,8 @@ const feedParsedSchema = v.object({
 const articleParsedSchema = v.object({
 	articleId: v.number(),
 	feedId: v.number(),
+	feedSlug: v.string(),
+	articleSlug: v.string(),
 	title: v.optional(v.string()),
 	contentLength: v.number()
 })

@@ -68,6 +68,7 @@ CREATE TABLE IF NOT EXISTS articles (
   guid TEXT NOT NULL,
   guid_is_permalink BOOLEAN DEFAULT 0,
   url TEXT,
+  slug TEXT NOT NULL,
   
   -- Content
   title TEXT NOT NULL,
@@ -106,7 +107,8 @@ CREATE TABLE IF NOT EXISTS articles (
   scraped_at TIMESTAMP,
   
   FOREIGN KEY (feed_id) REFERENCES feeds(id) ON DELETE CASCADE,
-  UNIQUE(feed_id, guid)
+  UNIQUE(feed_id, guid),
+  UNIQUE(feed_id, slug)
 );
 
 -- Subscriptions table
@@ -156,6 +158,7 @@ CREATE INDEX IF NOT EXISTS idx_subscriptions_feed_id ON subscriptions(feed_id);
 CREATE INDEX IF NOT EXISTS idx_articles_feed_id_published ON articles(feed_id, published_at DESC);
 CREATE INDEX IF NOT EXISTS idx_articles_guid ON articles(guid);
 CREATE INDEX IF NOT EXISTS idx_articles_url ON articles(url);
+CREATE INDEX IF NOT EXISTS idx_articles_slug ON articles(feed_id, slug);
 
 -- User-Article indexes
 CREATE INDEX IF NOT EXISTS idx_user_article_user_id ON user_article(user_id);

@@ -83,9 +83,11 @@ export const parseArticle = inngest.createFunction(
 		const article = await step.run("fetch-article", () => {
 			const db = getDatabase()
 			const article = db
-				.prepare<[id: number], Article>(`
-				SELECT * FROM articles WHERE id = ?
-			`)
+				.prepare<[id: number], Article & { feed_slug: string }>(`
+					SELECT a.*, f.slug as feed_slug FROM articles a
+					INNER JOIN feeds f ON a.feed_id = f.id
+					WHERE a.id = ?
+				`)
 				.get(articleId)
 
 			if (!article) {
@@ -199,6 +201,8 @@ export const parseArticle = inngest.createFunction(
 					sseManager.notifyUser(subscriber.user_id, "article.parsed", {
 						articleId,
 						feedId,
+						feedSlug: article.feed_slug,
+						articleSlug: article.slug,
 						title: parsed.title ?? undefined,
 						contentLength: parsed.length ?? 0
 					})

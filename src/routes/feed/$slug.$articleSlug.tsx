@@ -4,25 +4,25 @@ import { getDatabase } from "#/db"
 import type { Article, UserArticle } from "#/db/types"
 import { getUserId } from "#/sso/getUserId"
 import * as v from "valibot"
-import styles from "./-$id.module.css"
+import styles from "./-$slug.$articleSlug.module.css"
 import { useEffect, useRef, useState } from "react"
 
 const getArticle = createServerFn({
 	method: "GET"
 })
-	.inputValidator(v.number())
-	.handler(async ({ data: articleId, signal }) => {
+	.inputValidator(v.object({ feedSlug: v.string(), articleSlug: v.string() }))
+	.handler(async ({ data: { feedSlug, articleSlug }, signal }) => {
 		const userId = await getUserId({ signal })
 		const db = getDatabase()
 
 		// Get article details
 		const article = db
-			.prepare<[articleId: number], Article & { feed_slug: string }>(` 
+			.prepare<[feedSlug: string, articleSlug: string], Article & { feed_slug: string }>(` 
 				SELECT a.*, f.slug as feed_slug FROM articles a
 				INNER JOIN feeds f ON a.feed_id = f.id
-				WHERE a.id = ?
+				WHERE f.slug = ? AND a.slug = ?
 			`)
-			.get(articleId)
+			.get(feedSlug, articleSlug)
 
 		if (!article) {
 			throw notFound()
@@ -46,7 +46,7 @@ const getArticle = createServerFn({
 				SELECT * FROM user_article
 				WHERE user_id = ? AND article_id = ?
 			`)
-			.get(userId, articleId)
+			.get(userId, article.id)
 
 		return { article, userArticle }
 	})
@@ -110,26 +110,13 @@ const toggleBookmark = createServerFn({
 		return { success: true, isBookmarked }
 	})
 
-export const Route = createFileRoute("/article/$id")({
+export const Route = createFileRoute("/feed/$slug/$articleSlug")({
 	component: ArticlePage,
-	params: {
-		parse: (p) =>
-			v.parse(
-				v.object({
-					id: v.union([
-						v.number(),
-						v.pipe(
-							v.string(),
-							v.transform((val) => parseInt(val, 10)),
-							v.number()
-						)
-					])
-				}),
-				p
-			)
-	},
 	loader: ({ abortController, params }) =>
-		getArticle({ data: params.id, signal: abortController.signal })
+		getArticle({
+			data: { feedSlug: params.slug, articleSlug: params.articleSlug },
+			signal: abortController.signal
+		})
 })
 
 function ArticlePage() {

@@ -113,8 +113,14 @@ export function Notifications() {
 			'article.parsed',
 			(event) => {
 				const data = event.detail
-				router.invalidate({ filter: (r) => r.routeId === `/feed/$slug` })
-				router.invalidate({ filter: (r) => r.routeId === `/article/$id` && r.params.id === data.articleId })
+				router.invalidate({ filter: (r) => r.routeId === `/feed/$slug/` && r.params.slug === data.feedSlug })
+				// Invalidate specific article route using slugs from notification
+				router.invalidate({
+					filter: (r) =>
+						r.routeId === `/feed/$slug/$articleSlug` &&
+						r.params.slug === data.feedSlug &&
+						r.params.articleSlug === data.articleSlug
+				})
 			},
 			{ signal }
 		)

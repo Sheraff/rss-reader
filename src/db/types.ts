@@ -68,6 +68,7 @@ export interface Article {
 	guid: string
 	guid_is_permalink: boolean
 	url: string | null
+	slug: string
 
 	// Content
 	title: string
@@ -189,6 +190,7 @@ export interface ArticleInsert {
 	guid: string
 	guid_is_permalink?: boolean
 	url?: string | null
+	slug: string
 	title: string
 	content?: string | null
 	summary?: string | null
@@ -264,6 +266,7 @@ export interface ArticleUpdate {
 	guid?: string
 	guid_is_permalink?: boolean
 	url?: string | null
+	slug?: string
 	title?: string
 	content?: string | null
 	summary?: string | null

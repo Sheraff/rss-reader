@@ -1,5 +1,5 @@
 import { getDatabase } from "#/db"
-import { generateUniqueSlug } from "#/db/slug"
+import { generateUniqueSlug, generateUniqueArticleSlug } from "#/db/slug"
 import type { Feed } from "#/db/types"
 import { inngest } from "#/inngest/inngest"
 import { NonRetriableError, RetryAfterError } from "inngest"
@@ -170,6 +170,7 @@ export const parseFeed = inngest.createFunction(
 					guid: string,
 					guid_is_permalink: number,
 					url: string | null,
+					slug: string,
 					title: string,
 					content: string | null,
 					summary: string | null,
@@ -183,23 +184,33 @@ export const parseFeed = inngest.createFunction(
 				guid,
 				guid_is_permalink,
 				url,
+				slug,
 				title,
 				content,
 				summary,
 				author_name,
 				published_at,
 				categories
-				) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+				) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 			`)
 
 			const newArticleIds: Array<number | bigint> = []
 			db.transaction(() => {
 				for (const item of parsedFeed.items ?? []) {
+					// Generate unique slug for article
+					const articleSlug = generateUniqueArticleSlug(
+						db,
+						feedId,
+						item.title ?? "Untitled",
+						item.link ?? null
+					)
+
 					const result = insertArticle.run(
 						feedId,
 						item.guid ?? item.link ?? item.title ?? "unknown",
 						item.guid && item.guid === item.link ? 1 : 0,
 						item.link ?? null,
+						articleSlug,
 						item.title ?? "Untitled",
 						typeof item.content === "string"
 							? item.content
