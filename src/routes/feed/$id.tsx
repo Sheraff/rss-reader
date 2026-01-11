@@ -6,7 +6,7 @@ import { getUserId } from "#/sso/getUserId"
 import { inngest } from "#/inngest/inngest"
 import * as v from "valibot"
 import styles from "./-$id.module.css"
-import { useEffect, useRef, useCallback } from "react"
+import { useEffect, useRef, useCallback, useState, useMemo } from "react"
 
 const getFeedArticles = createServerFn({
 	method: "GET"
@@ -39,14 +39,29 @@ const getFeedArticles = createServerFn({
 			throw notFound()
 		}
 
-		// Get articles
+		// Get articles with user interaction data
 		const articles = db
-			.prepare<[feedId: number], Article>(`
-				SELECT * FROM articles
-				WHERE feed_id = ?
-				ORDER BY published_at DESC
-			`)
-			.all(feedId)
+			.prepare<
+				[userId: string, feedId: number],
+				Article & {
+					is_read: number
+					is_bookmarked: number
+					is_favorited: number
+				}
+			>(
+				`
+				SELECT 
+					a.*,
+					COALESCE(ua.is_read, 0) as is_read,
+					COALESCE(ua.is_bookmarked, 0) as is_bookmarked,
+					COALESCE(ua.is_favorited, 0) as is_favorited
+				FROM articles a
+				LEFT JOIN user_article ua ON a.id = ua.article_id AND ua.user_id = ?
+				WHERE a.feed_id = ?
+				ORDER BY a.published_at DESC
+			`
+			)
+			.all(userId, feedId)
 
 		return { feed, articles }
 	})
@@ -129,6 +144,19 @@ export const Route = createFileRoute("/feed/$id")({
 function FeedPage() {
 	const { feed, articles } = Route.useLoaderData()
 	const parsedArticles = useRef<Set<number> | null>(null)
+	const [readFilter, setReadFilter] = useState<"all" | "read" | "unread">("unread")
+	const [favoriteFilter, setFavoriteFilter] = useState<"all" | "favorites">("all")
+	const [bookmarkFilter, setBookmarkFilter] = useState<"all" | "bookmarked">("all")
+
+	const filteredArticles = useMemo(() => {
+		return articles.filter((article) => {
+			if (readFilter === "read" && !article.is_read) return false
+			if (readFilter === "unread" && article.is_read) return false
+			if (favoriteFilter === "favorites" && !article.is_favorited) return false
+			if (bookmarkFilter === "bookmarked" && !article.is_bookmarked) return false
+			return true
+		})
+	}, [articles, readFilter, favoriteFilter, bookmarkFilter])
 
 	// Trigger article parsing when it comes into view
 	const triggerArticleParsing = useCallback(async (articleId: number) => {
@@ -166,12 +194,18 @@ function FeedPage() {
 			}
 		)
 
-		// Observe all article items
-		const articleElements = document.querySelectorAll("[data-article-id]")
-		articleElements.forEach((el) => observer.observe(el))
+		// Only observe articles that haven't been parsed yet
+		const unparsedArticles = filteredArticles.filter(
+			(article) => article.fetch_status === "none" || article.fetch_status === "failed"
+		)
+
+		unparsedArticles.forEach((article) => {
+			const el = document.querySelector(`[data-article-id="${article.id}"]`)
+			if (el) observer.observe(el)
+		})
 
 		return () => observer.disconnect()
-	}, [articles, triggerArticleParsing])
+	}, [filteredArticles, triggerArticleParsing])
 
 	return (
 		<div className={styles.container}>
@@ -201,6 +235,31 @@ function FeedPage() {
 				</div>
 			</header>
 
+			<div className={styles.filters}>
+				<div className={styles.filterGroup}>
+					<label>Read Status:</label>
+					<select value={readFilter} onChange={(e) => setReadFilter(e.target.value as any)}>
+						<option value="all">All</option>
+						<option value="read">Read</option>
+						<option value="unread">Unread</option>
+					</select>
+				</div>
+				<div className={styles.filterGroup}>
+					<label>Favorites:</label>
+					<select value={favoriteFilter} onChange={(e) => setFavoriteFilter(e.target.value as any)}>
+						<option value="all">All</option>
+						<option value="favorites">Favorites</option>
+					</select>
+				</div>
+				<div className={styles.filterGroup}>
+					<label>Bookmarks:</label>
+					<select value={bookmarkFilter} onChange={(e) => setBookmarkFilter(e.target.value as any)}>
+						<option value="all">All</option>
+						<option value="bookmarked">Bookmarked</option>
+					</select>
+				</div>
+			</div>
+
 			{articles.length === 0 ? (
 				<div className={styles.emptyState}>
 					<p>No articles found in this feed yet.</p>
@@ -208,9 +267,12 @@ function FeedPage() {
 				</div>
 			) : (
 				<div>
-					<h2 className={styles.articlesHeader}>Articles ({articles.length})</h2>
+					<h2 className={styles.articlesHeader}>
+						Articles ({filteredArticles.length}
+						{filteredArticles.length !== articles.length && ` of ${articles.length}`})
+					</h2>
 					<ul className={styles.articleList}>
-						{articles.map((article) => (
+						{filteredArticles.map((article) => (
 							<li key={article.id} data-article-id={article.id}>
 								<Link
 									to="/article/$id"
@@ -219,7 +281,21 @@ function FeedPage() {
 								>
 									<div className={styles.articleContent}>
 										<div className={styles.articleInfo}>
-											<h3 className={styles.articleTitle}>{article.title}</h3>
+											<div className={styles.articleTitleRow}>
+												<h3 className={styles.articleTitle}>{article.title}</h3>
+												<div className={styles.statusBadges}>
+													{!article.is_read && <span className={styles.badge} title="Unread">●</span>}
+													{article.is_favorited ? (
+														<span className={styles.badge} title="Favorite">★</span>
+													) : null}
+													{article.is_bookmarked ? (
+														<span className={styles.badge} title="Bookmarked">🔖</span>
+													) : null}
+													{article.fetch_status !== "complete" && article.fetch_status !== "scheduled" ? (
+														<span className={styles.badge} title="Not parsed yet">⏳</span>
+													) : null}
+												</div>
+											</div>
 											{article.summary && (
 												<p className={styles.articleSummary}>
 													{article.summary.substring(0, 200)}

@@ -5,7 +5,7 @@ import type { Article, UserArticle } from "#/db/types"
 import { getUserId } from "#/sso/getUserId"
 import * as v from "valibot"
 import styles from "./-$id.module.css"
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 
 const getArticle = createServerFn({
 	method: "GET"
@@ -70,6 +70,44 @@ const markAsRead = createServerFn({
 		return { success: true }
 	})
 
+const toggleFavorite = createServerFn({
+	method: "POST"
+})
+	.inputValidator(v.object({ articleId: v.number(), isFavorited: v.boolean() }))
+	.handler(async ({ data: { articleId, isFavorited }, signal }) => {
+		const userId = await getUserId({ signal })
+		const db = getDatabase()
+
+		// Upsert to user_article table
+		db.prepare<[userId: string, articleId: number, isFavorited: number, isFavorited2: number]>(`
+			INSERT INTO user_article (user_id, article_id, is_favorited)
+			VALUES (?, ?, ?)
+			ON CONFLICT(user_id, article_id) 
+			DO UPDATE SET is_favorited = ?
+		`).run(userId, articleId, isFavorited ? 1 : 0, isFavorited ? 1 : 0)
+
+		return { success: true, isFavorited }
+	})
+
+const toggleBookmark = createServerFn({
+	method: "POST"
+})
+	.inputValidator(v.object({ articleId: v.number(), isBookmarked: v.boolean() }))
+	.handler(async ({ data: { articleId, isBookmarked }, signal }) => {
+		const userId = await getUserId({ signal })
+		const db = getDatabase()
+
+		// Upsert to user_article table
+		db.prepare<[userId: string, articleId: number, isBookmarked: number, isBookmarked2: number]>(`
+			INSERT INTO user_article (user_id, article_id, is_bookmarked)
+			VALUES (?, ?, ?)
+			ON CONFLICT(user_id, article_id) 
+			DO UPDATE SET is_bookmarked = ?
+		`).run(userId, articleId, isBookmarked ? 1 : 0, isBookmarked ? 1 : 0)
+
+		return { success: true, isBookmarked }
+	})
+
 export const Route = createFileRoute("/article/$id")({
 	component: ArticlePage,
 	params: {
@@ -95,6 +133,31 @@ export const Route = createFileRoute("/article/$id")({
 function ArticlePage() {
 	const { article, userArticle } = Route.useLoaderData()
 	const hasMarkedAsRead = useRef(false)
+	const [isFavorited, setIsFavorited] = useState(userArticle?.is_favorited ?? false)
+	const [isBookmarked, setIsBookmarked] = useState(userArticle?.is_bookmarked ?? false)
+	const [isRead, setIsRead] = useState(userArticle?.is_read ?? false)
+
+	const handleToggleFavorite = async () => {
+		const newValue = !isFavorited
+		setIsFavorited(newValue)
+		try {
+			await toggleFavorite({ data: { articleId: article.id, isFavorited: newValue } })
+		} catch (err) {
+			console.error("Failed to toggle favorite:", err)
+			setIsFavorited(!newValue)
+		}
+	}
+
+	const handleToggleBookmark = async () => {
+		const newValue = !isBookmarked
+		setIsBookmarked(newValue)
+		try {
+			await toggleBookmark({ data: { articleId: article.id, isBookmarked: newValue } })
+		} catch (err) {
+			console.error("Failed to toggle bookmark:", err)
+			setIsBookmarked(!newValue)
+		}
+	}
 
 	// Track scroll to mark as read
 	useEffect(() => {
@@ -106,6 +169,7 @@ function ArticlePage() {
 			if (window.scrollY > 150 && !hasMarkedAsRead.current) {
 				hasMarkedAsRead.current = true
 				markAsRead({ data: article.id }).then(() => {
+					setIsRead(true)
 					window.removeEventListener("scroll", handleScroll)
 				}).catch((err) => {
 					console.error("Failed to mark article as read:", err)
@@ -125,19 +189,40 @@ function ArticlePage() {
 	return (
 		<div className={styles.container}>
 			<nav className={styles.nav}>
-				<Link to="/feed/$id" params={{ id: article.feed_id }} className={styles.backLink}>
-					← Back to Feed
-				</Link>
-				{article.url && (
-					<a
-						href={article.url}
-						target="_blank"
-						rel="noopener noreferrer"
-						className={styles.originalLink}
+				<div className={styles.navLeft}>
+					<Link to="/feed/$id" params={{ id: article.feed_id }} className={styles.backLink}>
+						← Back to Feed
+					</Link>
+					<span className={isRead ? styles.readStatus : styles.unreadStatus}>
+						{isRead ? "Read" : "Unread"}
+					</span>
+				</div>
+				<div className={styles.navActions}>
+					<button
+						onClick={handleToggleFavorite}
+						className={`${styles.actionButton} ${isFavorited ? styles.active : ""}`}
+						title={isFavorited ? "Remove from favorites" : "Add to favorites"}
 					>
-						View Original →
-					</a>
-				)}
+						{isFavorited ? "★" : "☆"} Favorite
+					</button>
+					<button
+						onClick={handleToggleBookmark}
+						className={`${styles.actionButton} ${isBookmarked ? styles.active : ""}`}
+						title={isBookmarked ? "Remove bookmark" : "Add bookmark"}
+					>
+						🔖 {isBookmarked ? "Bookmarked" : "Bookmark"}
+					</button>
+					{article.url && (
+						<a
+							href={article.url}
+							target="_blank"
+							rel="noopener noreferrer"
+							className={styles.originalLink}
+						>
+							View Original →
+						</a>
+					)}
+				</div>
 			</nav>
 
 			<article className={styles.article}>

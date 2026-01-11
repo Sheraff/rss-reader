@@ -12,6 +12,66 @@
 	gap: 1rem;
 }
 
+.navLeft {
+	display: flex;
+	align-items: center;
+	gap: 1rem;
+}
+
+.navActions {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+}
+
+.readStatus,
+.unreadStatus {
+	padding: 0.25rem 0.75rem;
+	border-radius: 12px;
+	font-size: 0.85rem;
+	font-weight: 500;
+}
+
+.readStatus {
+	background-color: #e8f5e9;
+	color: #2e7d32;
+}
+
+.unreadStatus {
+	background-color: #e3f2fd;
+	color: #1976d2;
+}
+
+.actionButton {
+	padding: 0.5rem 1rem;
+	border: 1px solid #ddd;
+	border-radius: 6px;
+	background-color: white;
+	color: #555;
+	font-size: 0.9rem;
+	cursor: pointer;
+	transition: all 0.2s;
+	display: flex;
+	align-items: center;
+	gap: 0.35rem;
+}
+
+.actionButton:hover {
+	border-color: #007bff;
+	background-color: #f8f9fa;
+}
+
+.actionButton.active {
+	background-color: #007bff;
+	color: white;
+	border-color: #007bff;
+}
+
+.actionButton.active:hover {
+	background-color: #0056b3;
+	border-color: #0056b3;
+}
+
 .backLink,
 .originalLink {
 	color: #007bff;
