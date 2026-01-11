@@ -4,6 +4,7 @@ import { inngest } from "#/inngest/inngest"
 import { Readability } from "@mozilla/readability"
 import { RetryAfterError } from "inngest"
 import { parseHTML } from "linkedom"
+import { getSSEManager } from "#/sse/sse-manager"
 
 export const parseArticle = inngest.createFunction(
 	{
@@ -106,6 +107,32 @@ export const parseArticle = inngest.createFunction(
 				"complete",
 				articleId
 			)
+		})
+
+		// Notify subscribers via SSE
+		await step.run("notify-subscribers", async () => {
+			const db = getDatabase()
+			// Get all users subscribed to this feed
+			const subscribers = db
+				.prepare<[feedId: number], { user_id: string }>(
+					`SELECT DISTINCT user_id FROM subscriptions WHERE feed_id = ?`
+				)
+				.all(feedId)
+
+			// Send notification to each subscriber
+			const sseManager = getSSEManager()
+			await Promise.allSettled(
+				subscribers.map((subscriber) =>
+					sseManager.notifyUser(subscriber.user_id, "article.parsed", {
+						articleId,
+						feedId,
+						title: parsed.title ?? undefined,
+						contentLength: parsed.length ?? 0
+					})
+				)
+			)
+
+			return { notifiedUsers: subscribers.length }
 		})
 
 		return {

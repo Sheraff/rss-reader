@@ -7,6 +7,14 @@ const feedParsedSchema = v.object({
 	totalItems: v.number()
 })
 
+const articleParsedSchema = v.object({
+	articleId: v.number(),
+	feedId: v.number(),
+	title: v.optional(v.string()),
+	contentLength: v.number()
+})
+
 export const schemas = {
-	"feed.parsed": feedParsedSchema
+	"feed.parsed": feedParsedSchema,
+	"article.parsed": articleParsedSchema
 }
