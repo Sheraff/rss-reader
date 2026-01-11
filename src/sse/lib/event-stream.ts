@@ -1,4 +1,3 @@
-
 /**
  * See https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events#fields
  */
@@ -11,20 +10,20 @@ export interface EventStreamMessage {
 
 /**
  * A helper class for [server sent events](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events#event_stream_format)
- * 
+ *
  * Heavily inspired by [H3's event stream](https://github.com/h3js/h3/blob/main/src/utils/internal/event-stream.ts#L10)
  */
 export class EventStream {
 	private readonly _request: Request
-	private readonly _transformStream = new TransformStream();
+	private readonly _transformStream = new TransformStream()
 	private readonly _writer: WritableStreamDefaultWriter
-	private readonly _encoder = new TextEncoder();
+	private readonly _encoder = new TextEncoder()
 
-	private _writerIsClosed = false;
-	private _paused = false;
+	private _writerIsClosed = false
+	private _paused = false
 	private _unsentData: undefined | string
-	private _disposed = false;
-	private _handled = false;
+	private _disposed = false
+	private _handled = false
 
 	constructor(request: Request) {
 		this._request = request
@@ -44,9 +43,7 @@ export class EventStream {
 	async push(message: string[]): Promise<void>
 	async push(message: EventStreamMessage): Promise<void>
 	async push(message: EventStreamMessage[]): Promise<void>
-	async push(
-		message: EventStreamMessage | EventStreamMessage[] | string | string[],
-	) {
+	async push(message: EventStreamMessage | EventStreamMessage[] | string | string[]) {
 		if (typeof message === "string") {
 			await this._sendEvent({ data: message })
 			return
@@ -81,9 +78,7 @@ export class EventStream {
 			this._unsentData += formatEventStreamComment(comment)
 			return
 		}
-		await this._writer
-			.write(this._encoder.encode(formatEventStreamComment(comment)))
-			.catch()
+		await this._writer.write(this._encoder.encode(formatEventStreamComment(comment))).catch()
 	}
 
 	private async _sendEvent(message: EventStreamMessage) {
@@ -98,9 +93,7 @@ export class EventStream {
 			this._unsentData += formatEventStreamMessage(message)
 			return
 		}
-		await this._writer
-			.write(this._encoder.encode(formatEventStreamMessage(message)))
-			.catch()
+		await this._writer.write(this._encoder.encode(formatEventStreamMessage(message))).catch()
 	}
 
 	private async _sendEvents(messages: EventStreamMessage[]) {
@@ -173,7 +166,7 @@ export class EventStream {
 			"Content-Type": "text/event-stream",
 			"Cache-Control": "private, no-cache, no-store, no-transform, must-revalidate, max-age=0",
 			"Transfer-Encoding": "chunked",
-			"x-accel-buffering": "no", // prevent nginx from buffering the response
+			"x-accel-buffering": "no" // prevent nginx from buffering the response
 		})
 		if (this._request.keepalive || this._request.headers.get("connection") === "keep-alive") {
 			headers.set("Connection", "keep-alive")
@@ -223,9 +216,7 @@ export function formatEventStreamMessage(message: EventStreamMessage): string {
 	return result
 }
 
-export function formatEventStreamMessages(
-	messages: EventStreamMessage[],
-): string {
+export function formatEventStreamMessages(messages: EventStreamMessage[]): string {
 	let result = ""
 	for (const msg of messages) {
 		result += formatEventStreamMessage(msg)

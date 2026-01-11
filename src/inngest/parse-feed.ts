@@ -1,7 +1,7 @@
 import { getDatabase } from "#/db"
 import type { Feed } from "#/db/types"
 import { inngest } from "#/inngest/inngest"
-import { NonRetriableError } from "inngest"
+import { NonRetriableError, RetryAfterError } from "inngest"
 import Parser from "rss-parser"
 import { getSSEManager } from "#/sse/sse-manager"
 
@@ -53,6 +53,11 @@ export const parseFeed = inngest.createFunction(
 			// Handle 304 Not Modified
 			if (response.status === 304) {
 				return { status: 304 as const }
+			}
+
+			if (response.status === 429 && response.headers.get("Retry-After")) {
+				const retryAfter = parseInt(response.headers.get("Retry-After")!, 10)
+				throw new RetryAfterError(`Rate limited. Retry after ${retryAfter} seconds.`, retryAfter)
 			}
 
 			if (!response.ok) {
@@ -232,19 +237,20 @@ export const parseFeed = inngest.createFunction(
 
 				// Send notification to each subscriber
 				const sseManager = getSSEManager()
-				await Promise.allSettled(subscribers.map(subscriber =>
-					sseManager.notifyUser(subscriber.user_id, "feed.parsed", {
-						feedId,
-						feedTitle: parsedFeed.title,
-						newArticles: newArticleIds.length,
-						totalItems: parsedFeed.items?.length ?? 0
-					})
-				))
+				await Promise.allSettled(
+					subscribers.map((subscriber) =>
+						sseManager.notifyUser(subscriber.user_id, "feed.parsed", {
+							feedId,
+							feedTitle: parsedFeed.title,
+							newArticles: newArticleIds.length,
+							totalItems: parsedFeed.items?.length ?? 0
+						})
+					)
+				)
 
 				return { notifiedUsers: subscribers.length }
 			})
 		}
-
 
 		return {
 			feedId,

@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router"
 import { getUserId } from "#/sso/getUserId"
 import { getSSEManager } from "#/sse/sse-manager"
-import { EventStream } from "#/sse/event-stream"
+import { EventStream } from "#/sse/lib/event-stream"
 
 /**
  * Server-Sent Events endpoint for real-time notifications
@@ -19,24 +19,14 @@ export const Route = createFileRoute("/api/notifications")({
           // Create event stream
           const eventStream = new EventStream(request)
 
-          // Register connection
-          getSSEManager().addConnection(userId, eventStream)
-
           // Clean up on disconnect
           eventStream.onClosed(async () => {
             getSSEManager().removeConnection(userId)
             await eventStream.close()
           })
 
-          // Queue initial message synchronously (don't await)
-          // This ensures data is written to the transform stream before we return
-          eventStream.push({
-            event: "connected",
-            data: JSON.stringify({
-              userId,
-              timestamp: new Date().getTime()
-            })
-          }).catch(console.error)
+          // Register connection
+          getSSEManager().addConnection(userId, eventStream)
 
           // Return immediately with the readable stream
           // The initial message will be flushed as soon as the client starts reading

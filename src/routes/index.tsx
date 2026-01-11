@@ -114,7 +114,6 @@ function HomePage() {
 	const feeds = Route.useLoaderData()
 	const router = useRouter()
 
-
 	const handleAddFeed = async (e: React.FormEvent<HTMLFormElement>) => {
 		e.preventDefault()
 		const form = e.currentTarget
@@ -151,7 +150,8 @@ function HomePage() {
 					<button
 						type="button"
 						className={styles.addFeedButton}
-						commandfor="add-feed-dialog" command="show-modal"
+						commandfor="add-feed-dialog"
+						command="show-modal"
 					>
 						Add Feed
 					</button>
@@ -198,19 +198,22 @@ function HomePage() {
 					<button
 						type="button"
 						className={styles.addFeedButton}
-						commandfor="add-feed-dialog" command="show-modal"
+						commandfor="add-feed-dialog"
+						command="show-modal"
 					>
 						Add Feed
 					</button>
 				</div>
 			</div>
 
-
-
 			<ul className={styles.feedList}>
 				{feeds.map((feed) => (
 					<li key={feed.id} className={styles.feedItem}>
-						<Link to="/feed/$id" params={{ id: feed.id }} style={{ display: "flex", gap: "1rem", textDecoration: "none", color: "inherit" }}>
+						<Link
+							to="/feed/$id"
+							params={{ id: feed.id }}
+							style={{ display: "flex", gap: "1rem", textDecoration: "none", color: "inherit" }}
+						>
 							{feed.image_url && <img src={feed.image_url} alt="" className={styles.feedImage} />}
 							<div className={styles.feedContent}>
 								<h2 className={styles.feedTitle}>{feed.title || "Untitled Feed"}</h2>

@@ -52,12 +52,20 @@ const getFeedArticles = createServerFn({
 export const Route = createFileRoute("/feed/$id")({
 	component: FeedPage,
 	params: {
-		parse: (p) => v.parse(v.object({
-			id: v.union([
-				v.number(),
-				v.pipe(v.string(), v.transform((val) => parseInt(val, 10)), v.number()),
-			])
-		}), p)
+		parse: (p) =>
+			v.parse(
+				v.object({
+					id: v.union([
+						v.number(),
+						v.pipe(
+							v.string(),
+							v.transform((val) => parseInt(val, 10)),
+							v.number()
+						)
+					])
+				}),
+				p
+			)
 	},
 	loader: ({ abortController, params }) =>
 		getFeedArticles({ data: params.id, signal: abortController.signal })
@@ -76,14 +84,17 @@ function FeedPage() {
 
 			<header className={styles.header}>
 				<div className={styles.headerContent}>
-					{feed.image_url && (
-						<img src={feed.image_url} alt="" className={styles.feedImage} />
-					)}
+					{feed.image_url && <img src={feed.image_url} alt="" className={styles.feedImage} />}
 					<div className={styles.feedInfo}>
 						<h1>{feed.title || "Untitled Feed"}</h1>
 						{feed.description && <p className={styles.feedDescription}>{feed.description}</p>}
 						{feed.link && (
-							<a href={feed.link} target="_blank" rel="noopener noreferrer" className={styles.feedLink}>
+							<a
+								href={feed.link}
+								target="_blank"
+								rel="noopener noreferrer"
+								className={styles.feedLink}
+							>
 								Visit Website →
 							</a>
 						)}

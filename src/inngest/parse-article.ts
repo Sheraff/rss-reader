@@ -2,6 +2,7 @@ import { getDatabase } from "#/db"
 import type { Article } from "#/db/types"
 import { inngest } from "#/inngest/inngest"
 import { Readability } from "@mozilla/readability"
+import { RetryAfterError } from "inngest"
 import { parseHTML } from "linkedom"
 
 export const parseArticle = inngest.createFunction(
@@ -47,6 +48,11 @@ export const parseArticle = inngest.createFunction(
 				signal: AbortSignal.timeout(20_000),
 				redirect: "follow"
 			})
+
+			if (response.status === 429 && response.headers.get("Retry-After")) {
+				const retryAfter = parseInt(response.headers.get("Retry-After")!, 10)
+				throw new RetryAfterError(`Rate limited. Retry after ${retryAfter} seconds.`, retryAfter)
+			}
 
 			if (!response.ok) {
 				throw new Error(`HTTP ${response.status}: ${response.statusText}`)
