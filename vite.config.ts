@@ -6,7 +6,9 @@ import { nitro } from "nitro/vite"
 
 const config = defineConfig({
 	clearScreen: false,
-	plugins: [devtools(), nitro(), tanstackStart(), viteReact()]
+	plugins: [
+		devtools({ enhancedLogs: { enabled: false } }),
+		nitro(), tanstackStart(), viteReact()]
 })
 
 export default config
